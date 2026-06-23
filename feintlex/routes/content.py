@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from feintlex.db import get_session
+from feintlex.models import ContentItem
 from feintlex.services.content_importer import import_content
 
 
@@ -29,3 +30,10 @@ def import_content_route(payload: ContentImportRequest, session: Session = Depen
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return item
+
+
+@router.get("/content")
+def list_content_route(limit: int = 20, session: Session = Depends(get_session)):
+    limit = max(1, min(limit, 100))
+    statement = select(ContentItem).order_by(ContentItem.created_at.desc()).limit(limit)
+    return list(session.exec(statement).all())

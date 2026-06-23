@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from feintlex import APP_NAME, __version__
 from feintlex.config import get_settings
@@ -13,6 +16,7 @@ from feintlex.routes import autopsy, content, health, lessons, progress, vocabul
 
 
 LOGGER = logging.getLogger("feintlex.app")
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
 def create_app() -> FastAPI:
@@ -30,6 +34,13 @@ def create_app() -> FastAPI:
         description="Local-first FeintAI language intelligence trainer.",
         lifespan=lifespan,
     )
+
+    application.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @application.get("/")
+    @application.get("/dashboard")
+    def dashboard() -> FileResponse:
+        return FileResponse(STATIC_DIR / "dashboard.html")
 
     application.include_router(health.router)
     application.include_router(content.router)

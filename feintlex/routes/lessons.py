@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from feintlex.db import get_session
-from feintlex.models import Lesson
+from feintlex.models import ExportRecord, Lesson
 from feintlex.services.exports import export_lesson_to_markdown
 from feintlex.services.lesson_generator import generate_lesson
 
@@ -25,6 +25,13 @@ def generate_lesson_route(payload: LessonGenerateRequest, session: Session = Dep
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/lessons")
+def list_lessons_route(limit: int = 20, session: Session = Depends(get_session)):
+    limit = max(1, min(limit, 100))
+    statement = select(Lesson).order_by(Lesson.created_at.desc()).limit(limit)
+    return list(session.exec(statement).all())
+
+
 @router.get("/lessons/{lesson_id}")
 def get_lesson_route(lesson_id: int, session: Session = Depends(get_session)):
     lesson = session.get(Lesson, lesson_id)
@@ -39,3 +46,10 @@ def export_lesson_route(lesson_id: int, session: Session = Depends(get_session))
         return export_lesson_to_markdown(session, lesson_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/exports")
+def list_exports_route(limit: int = 20, session: Session = Depends(get_session)):
+    limit = max(1, min(limit, 100))
+    statement = select(ExportRecord).order_by(ExportRecord.created_at.desc()).limit(limit)
+    return list(session.exec(statement).all())

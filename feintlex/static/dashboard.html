@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FeintLex Dashboard</title>
+    <link rel="stylesheet" href="/static/dashboard.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Language Intelligence Trainer</p>
+        <h1>FeintLex</h1>
+      </div>
+      <div class="status-strip" aria-live="polite">
+        <span id="healthStatus" class="status-pill">Checking</span>
+        <span id="dbStatus" class="status-pill muted">SQLite</span>
+        <span id="envStatus" class="status-pill muted">local</span>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="panel intake-panel" aria-labelledby="intakeTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Immersion</p>
+            <h2 id="intakeTitle">Source Intake</h2>
+          </div>
+          <select id="sourceType" aria-label="Source type">
+            <option value="pasted_text">Pasted Text</option>
+            <option value="article">Article</option>
+            <option value="subtitle">Subtitle</option>
+            <option value="transcript">Transcript</option>
+            <option value="manual_note">Manual Note</option>
+          </select>
+        </div>
+
+        <textarea
+          id="sourceText"
+          spellcheck="false"
+          placeholder="Pega texto en espanol aqui..."
+        ></textarea>
+
+        <div class="topic-grid" aria-label="Topic tags">
+          <label><input type="checkbox" name="topic" value="soccer" /> Soccer</label>
+          <label><input type="checkbox" name="topic" value="cybersecurity" /> Cybersecurity</label>
+          <label><input type="checkbox" name="topic" value="investigation" /> Investigation</label>
+          <label><input type="checkbox" name="topic" value="news" /> News</label>
+          <label><input type="checkbox" name="topic" value="tv" /> TV</label>
+          <label><input type="checkbox" name="topic" value="general" /> General</label>
+        </div>
+
+        <input id="extraTags" type="text" placeholder="extra tags, comma separated" />
+
+        <div class="action-row">
+          <button id="generateLessonButton" class="primary-button" type="button">Import + Generate</button>
+          <button id="clearButton" type="button">Clear</button>
+        </div>
+        <p id="workStatus" class="work-status" aria-live="polite">Ready.</p>
+      </section>
+
+      <section class="panel lesson-panel" aria-labelledby="lessonTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Sentence Autopsy -> Practice</p>
+            <h2 id="lessonTitle">Active Lesson</h2>
+          </div>
+          <button id="exportLessonButton" type="button" disabled>Export MD</button>
+        </div>
+
+        <article id="lessonOutput" class="lesson-output empty-state">
+          <h3>No lesson loaded</h3>
+          <p>Paste Spanish source text to generate the first drill.</p>
+        </article>
+      </section>
+
+      <aside class="side-stack">
+        <section class="panel compact-panel" aria-labelledby="queueTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Queue</p>
+              <h2 id="queueTitle">Recent Lessons</h2>
+            </div>
+            <button id="refreshButton" type="button">Refresh</button>
+          </div>
+          <div id="lessonList" class="list-output"></div>
+        </section>
+
+        <section class="panel compact-panel" aria-labelledby="vocabTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Reinforcement</p>
+              <h2 id="vocabTitle">Vocabulary Watchlist</h2>
+            </div>
+          </div>
+          <div id="vocabList" class="chip-field"></div>
+        </section>
+
+        <section class="panel compact-panel" aria-labelledby="reviewTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Review</p>
+              <h2 id="reviewTitle">Due Now</h2>
+            </div>
+          </div>
+          <div id="reviewList" class="list-output"></div>
+        </section>
+      </aside>
+
+      <section class="panel autopsy-panel" aria-labelledby="autopsyTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Codebreaking</p>
+            <h2 id="autopsyTitle">Sentence Autopsy</h2>
+          </div>
+          <button id="runAutopsyButton" type="button">Analyze</button>
+        </div>
+        <textarea id="autopsyInput" spellcheck="false" placeholder="Selecciona o pega una frase..."></textarea>
+        <div id="autopsyOutput" class="structured-output"></div>
+      </section>
+
+      <section class="panel writing-panel" aria-labelledby="writingTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Correction</p>
+            <h2 id="writingTitle">Writing Practice</h2>
+          </div>
+          <button id="submitWritingButton" type="button">Submit</button>
+        </div>
+        <textarea id="writingInput" spellcheck="false" placeholder="Escribe tu respuesta en espanol..."></textarea>
+        <div id="writingOutput" class="structured-output"></div>
+      </section>
+    </main>
+
+    <script src="/static/dashboard.js"></script>
+  </body>
+</html>

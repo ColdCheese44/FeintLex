@@ -76,6 +76,24 @@ Health check:
 Invoke-RestMethod http://127.0.0.1:8044/health
 ```
 
+## Run The Dashboard
+
+```powershell
+.\scripts\launch_dashboard.ps1
+```
+
+The launcher starts the local FastAPI server if needed, then opens:
+
+```text
+http://127.0.0.1:8044/dashboard
+```
+
+Create or refresh the Windows Desktop shortcut:
+
+```powershell
+.\scripts\create_desktop_shortcut.ps1
+```
+
 ## API Examples
 
 Import pasted Spanish text:

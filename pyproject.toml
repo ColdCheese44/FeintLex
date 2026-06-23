@@ -29,6 +29,9 @@ feintlex = "feintlex.cli:app"
 [tool.setuptools.packages.find]
 include = ["feintlex*"]
 
+[tool.setuptools.package-data]
+feintlex = ["static/*", "prompts/*.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
