@@ -9,8 +9,10 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 $LogDir = Join-Path $RepoRoot "logs"
 $VenvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
 $PythonExe = if (Test-Path -LiteralPath $VenvPython) { $VenvPython } else { "python" }
+$BrowserHelper = Join-Path $PSScriptRoot "feint_browser.ps1"
 
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
+. $BrowserHelper
 
 function Test-FeintLexHealth {
     param([int]$CandidatePort)
@@ -51,14 +53,14 @@ function Start-FeintLexServer {
 
 for ($candidate = $Port; $candidate -le $MaxPort; $candidate++) {
     if (Test-FeintLexHealth -CandidatePort $candidate) {
-        Start-Process "http://127.0.0.1:$candidate/dashboard"
+        Open-FeintBrowser -Url "http://127.0.0.1:$candidate/dashboard"
         exit 0
     }
 
     $process = Start-FeintLexServer -CandidatePort $candidate
     for ($attempt = 0; $attempt -lt 24; $attempt++) {
         if (Test-FeintLexHealth -CandidatePort $candidate) {
-            Start-Process "http://127.0.0.1:$candidate/dashboard"
+            Open-FeintBrowser -Url "http://127.0.0.1:$candidate/dashboard"
             exit 0
         }
         if ($process.HasExited) {

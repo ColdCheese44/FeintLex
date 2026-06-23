@@ -82,17 +82,28 @@ Invoke-RestMethod http://127.0.0.1:8044/health
 .\scripts\launch_dashboard.ps1
 ```
 
-The launcher starts the local FastAPI server if needed, then opens:
+The launcher starts the local FastAPI server if needed, then opens the dashboard in a full-screen Brave window by default:
 
 ```text
 http://127.0.0.1:8044/dashboard
 ```
+
+If Brave is unavailable, FeintLex falls back to the default system browser and prints a warning.
 
 Create or refresh the Windows Desktop shortcut:
 
 ```powershell
 .\scripts\create_desktop_shortcut.ps1
 ```
+
+Browser overrides:
+
+```powershell
+$env:FEINT_BROWSER_MODE="fullscreen" # fullscreen, maximized, normal, kiosk
+$env:FEINT_BROWSER_PATH="C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+```
+
+`FEINT_BROWSER` defaults to `brave`. Set `FEINT_BROWSER=default` only when you intentionally want the system browser fallback.
 
 ## API Examples
 
@@ -148,6 +159,9 @@ If `--file` points to an existing text file, FeintLex reads the file. Otherwise 
 | `FEINTLEX_LOG_LEVEL` | Python log level | No |
 | `FEINTLEX_EXPORT_DIR` | Markdown export directory | No |
 | `FEINTLEX_AI_PROVIDER` | Future provider selector, default `none` | No |
+| `FEINT_BROWSER` | Browser preference for local launchers, default `brave` | No |
+| `FEINT_BROWSER_MODE` | Browser window mode: `fullscreen`, `maximized`, `normal`, `kiosk` | No |
+| `FEINT_BROWSER_PATH` | Optional explicit Brave executable path | No |
 | `OPENAI_API_KEY` | Optional future AI key | No |
 | `ANTHROPIC_API_KEY` | Optional future AI key | No |
 | `DISCORD_WEBHOOK_URL` | Optional future notifier | No |
