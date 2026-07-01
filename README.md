@@ -23,6 +23,7 @@ As Brendan, you can paste Spanish content and receive:
 - Writing prompt
 - Review items
 - Markdown export
+- Interactive scenario decks, drills, and local tutor coaching
 
 ## Architecture
 
@@ -105,6 +106,17 @@ $env:FEINT_BROWSER_PATH="C:\Program Files\BraveSoftware\Brave-Browser\Applicatio
 
 `FEINT_BROWSER` defaults to `brave`. Set `FEINT_BROWSER=default` only when you intentionally want the system browser fallback.
 
+The dashboard now includes a Signal Tutor workspace inspired by the Senal Spanish kit:
+
+- Scenario decks for contact, numbers, food, movement, time, and core verbs
+- Flashcard study with local signal-strength mastery
+- Multiple-choice drills weighted toward weak terms
+- Spanish speech synthesis where the browser supports it
+- Tutor coach panel for explanations, quizzes, sentence autopsy, and writing prompts
+- Local progress persistence in browser storage
+
+The tutor is AI-ready but does not require a paid API. The first version uses the offline rule-based tutor endpoint at `/tutor/respond`.
+
 ## API Examples
 
 Import pasted Spanish text:
@@ -129,6 +141,12 @@ Run sentence autopsy:
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8044/autopsy -Body '{"sentence":"El equipo analiza el partido porque necesita mejorar."}' -ContentType "application/json"
+```
+
+Ask the tutor for local coaching:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8044/tutor/respond -Body '{"message":"El equipo analiza alertas porque necesita responder.","action":"autopsy"}' -ContentType "application/json"
 ```
 
 Export a lesson:

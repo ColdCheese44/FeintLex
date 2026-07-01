@@ -20,6 +20,93 @@
     </header>
 
     <main class="shell">
+      <section class="panel tutor-panel" aria-labelledby="tutorTitle">
+        <div class="panel-heading tutor-heading">
+          <div>
+            <p class="eyebrow">Signal Tutor</p>
+            <h2 id="tutorTitle">Interactive AI Coach</h2>
+          </div>
+          <div class="tutor-signal">
+            <span>Overall</span>
+            <div id="overallSignalBars" class="signal-bars" aria-label="Overall signal strength"></div>
+            <strong id="overallSignalPercent">0%</strong>
+          </div>
+        </div>
+
+        <div class="tutor-tabs" role="tablist" aria-label="Tutor workspace">
+          <button class="tutor-tab active" type="button" data-tutor-tab="decks">Decks</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="study">Study</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="drill">Drill</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="coach">Coach</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="status">Status</button>
+        </div>
+
+        <div id="tutorDecksView" class="tutor-view">
+          <div class="tutor-toolbar">
+            <p class="list-empty">Scenario decks from the field kit. Pick a deck, drill weak terms, then ask the coach for grammar and sentence patterns.</p>
+            <button id="resetTutorProgressButton" type="button">Reset Progress</button>
+          </div>
+          <div id="deckGrid" class="deck-grid"></div>
+        </div>
+
+        <div id="tutorStudyView" class="tutor-view" hidden>
+          <div class="study-bar">
+            <button id="backToDecksButton" type="button">Decks</button>
+            <div>
+              <strong id="studyDeckName">Deck</strong>
+              <span id="studyCounter">01 / 01</span>
+            </div>
+            <div id="studySignalBars" class="signal-bars"></div>
+          </div>
+          <button id="flashcard" class="flashcard" type="button">
+            <span id="flashSide" class="face-tag">ES</span>
+            <strong id="flashPrimary">hola</strong>
+            <span id="flashNote">tap to reveal</span>
+            <span id="flashExample"></span>
+          </button>
+          <div class="study-actions">
+            <button id="previousTermButton" type="button">Prev</button>
+            <button id="speakTermButton" type="button">Say It</button>
+            <button id="coachTermButton" type="button">Ask Coach</button>
+            <button id="nextTermButton" type="button">Next</button>
+          </div>
+          <div class="grade-actions">
+            <button id="missedTermButton" type="button">Missed</button>
+            <button id="gotTermButton" class="primary-button" type="button">Got It</button>
+          </div>
+        </div>
+
+        <div id="tutorDrillView" class="tutor-view" hidden>
+          <div class="drill-toolbar">
+            <select id="drillScope" aria-label="Drill scope"></select>
+            <div class="score-line">
+              <span id="drillHits">Hits 0/0</span>
+              <span id="drillStreak">Streak 0</span>
+            </div>
+          </div>
+          <div id="drillCard" class="drill-card"></div>
+        </div>
+
+        <div id="tutorCoachView" class="tutor-view" hidden>
+          <div id="coachMessages" class="coach-messages" aria-live="polite"></div>
+          <div class="coach-quick-actions">
+            <button type="button" data-coach-action="explain">Explain</button>
+            <button type="button" data-coach-action="quiz">Quiz</button>
+            <button type="button" data-coach-action="autopsy">Autopsy</button>
+            <button type="button" data-coach-action="writing">Writing</button>
+          </div>
+          <div class="coach-input-row">
+            <textarea id="coachInput" spellcheck="false" placeholder="Ask the tutor about a phrase, grammar pattern, weak term, or active lesson..."></textarea>
+            <button id="sendCoachButton" class="primary-button" type="button">Send</button>
+          </div>
+        </div>
+
+        <div id="tutorStatusView" class="tutor-view" hidden>
+          <div id="tutorStatusGrid" class="status-grid"></div>
+          <div id="signalDistribution" class="signal-distribution"></div>
+        </div>
+      </section>
+
       <section class="panel intake-panel" aria-labelledby="intakeTitle">
         <div class="panel-heading">
           <div>

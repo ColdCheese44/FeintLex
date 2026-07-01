@@ -168,6 +168,7 @@ textarea {
   display: grid;
   grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 1.35fr) minmax(280px, 0.8fr);
   grid-template-areas:
+    "tutor tutor tutor"
     "intake lesson side"
     "autopsy lesson side"
     "writing lesson side";
@@ -191,6 +192,385 @@ textarea {
   min-height: 68px;
   padding: 14px;
   border-bottom: 1px solid var(--border);
+}
+
+.tutor-panel {
+  grid-area: tutor;
+}
+
+.tutor-heading {
+  align-items: center;
+}
+
+.tutor-signal,
+.score-line,
+.study-bar,
+.drill-toolbar,
+.tutor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tutor-signal {
+  justify-content: flex-end;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tutor-signal strong {
+  min-width: 48px;
+  color: var(--amber);
+  font-size: 20px;
+  text-align: right;
+}
+
+.signal-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 48px;
+  min-height: 26px;
+}
+
+.signal-bar {
+  width: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.signal-bar.on {
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.signal-bar.locked {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+
+.tutor-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.tutor-tab {
+  min-width: 112px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: #10120f;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.tutor-tab.active {
+  background: var(--surface-strong);
+  color: var(--amber);
+  box-shadow: inset 0 -2px 0 var(--amber);
+}
+
+.tutor-view {
+  padding: 14px;
+}
+
+.tutor-toolbar {
+  margin-bottom: 12px;
+}
+
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.deck-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 156px;
+  padding: 12px;
+  text-align: left;
+  background: #121410;
+}
+
+.deck-card strong {
+  display: block;
+  color: var(--text);
+  font-size: 18px;
+}
+
+.deck-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.deck-card .deck-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  color: var(--quiet);
+}
+
+.study-bar {
+  margin-bottom: 12px;
+}
+
+.study-bar div:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.study-bar span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.flashcard {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 250px;
+  padding: 24px;
+  border-color: var(--border-hot);
+  background: #121410;
+  text-align: center;
+}
+
+.flashcard strong {
+  max-width: 100%;
+  color: var(--text);
+  font-size: clamp(28px, 5vw, 52px);
+  overflow-wrap: anywhere;
+}
+
+.flashcard span {
+  max-width: 760px;
+  line-height: 1.45;
+}
+
+.face-tag {
+  justify-self: start;
+  color: var(--amber);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.study-actions,
+.grade-actions,
+.coach-quick-actions,
+.coach-input-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.study-actions button {
+  flex: 1 1 120px;
+}
+
+.grade-actions button {
+  flex: 1 1 180px;
+}
+
+.drill-toolbar {
+  margin-bottom: 12px;
+}
+
+.score-line {
+  color: var(--muted);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.score-line span:last-child {
+  color: var(--amber);
+}
+
+.drill-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border-hot);
+  border-radius: 6px;
+  background: #121410;
+}
+
+.drill-direction {
+  color: var(--amber);
+  font-size: 12px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.drill-prompt {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(24px, 4vw, 42px);
+  font-weight: 760;
+  line-height: 1.15;
+}
+
+.option-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.option-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  text-align: left;
+}
+
+.option-button.correct {
+  border-color: var(--green);
+  background: rgba(90, 191, 122, 0.13);
+}
+
+.option-button.wrong {
+  border-color: var(--red);
+  background: rgba(214, 106, 95, 0.13);
+}
+
+.option-num {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  min-height: 24px;
+  border: 1px solid var(--border);
+  color: var(--quiet);
+  font-size: 12px;
+}
+
+.drill-feedback {
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.coach-messages {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.coach-message {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #10120f;
+  line-height: 1.5;
+}
+
+.coach-message.user {
+  border-color: var(--border-hot);
+  background: #17170f;
+}
+
+.coach-message strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--amber);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.coach-message pre {
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0b0c0a;
+  white-space: pre-wrap;
+}
+
+.coach-quick-actions button {
+  flex: 1 1 110px;
+}
+
+.coach-input-row {
+  align-items: stretch;
+}
+
+.coach-input-row textarea {
+  flex: 1 1 360px;
+  min-height: 82px;
+}
+
+.coach-input-row button {
+  flex: 0 0 110px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.status-card {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #10120f;
+}
+
+.status-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.progress-track {
+  height: 9px;
+  border: 1px solid var(--border);
+  background: var(--black);
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--green);
+}
+
+.signal-distribution {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(44px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dist-card {
+  display: grid;
+  align-content: end;
+  min-height: 120px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #10120f;
+  text-align: center;
+}
+
+.dist-bar {
+  width: 100%;
+  min-height: 2px;
+  margin-top: auto;
+  background: var(--green);
 }
 
 .intake-panel {
@@ -401,9 +781,15 @@ textarea {
   .shell {
     grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
     grid-template-areas:
+      "tutor tutor"
       "intake lesson"
       "autopsy lesson"
       "writing side";
+  }
+
+  .deck-grid,
+  .status-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 }
 
@@ -416,6 +802,7 @@ textarea {
   .shell {
     grid-template-columns: 1fr;
     grid-template-areas:
+      "tutor"
       "intake"
       "lesson"
       "autopsy"
@@ -434,7 +821,13 @@ textarea {
   }
 
   .topic-grid,
-  .metric-row {
+  .metric-row,
+  .deck-grid,
+  .status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .coach-input-row button {
+    flex: 1 1 auto;
   }
 }

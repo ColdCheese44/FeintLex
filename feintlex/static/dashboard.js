@@ -3,9 +3,127 @@ const state = {
   latestLessons: [],
   vocabulary: [],
   reviewDue: { mistakes: [], review_items: [] },
+  tutor: {
+    activeTab: "decks",
+    selectedDeckId: "contact",
+    studyIndex: 0,
+    flashFlipped: false,
+    mastery: {},
+    drillScope: "all",
+    drill: null,
+    drillPicked: null,
+    drillSeen: 0,
+    drillRight: 0,
+    drillStreak: 0,
+    coachMessages: [],
+  },
 };
 
 const $ = (id) => document.getElementById(id);
+const TUTOR_STORAGE_KEY = "feintlex:tutor:mastery";
+const TUTOR_MAX_SIGNAL = 5;
+
+const TUTOR_DECKS = [
+  {
+    id: "contact",
+    tag: "01",
+    name: "Contact",
+    sub: "Greetings and essentials",
+    terms: [
+      { es: "hola", en: "hello", note: "Basic greeting.", xes: "Hola, como estas?", xen: "Hi, how are you?" },
+      { es: "buenos dias", en: "good morning", note: "Used until midday.", xes: "Buenos dias, senor.", xen: "Good morning, sir." },
+      { es: "por favor", en: "please", note: "Use with requests.", xes: "Un cafe, por favor.", xen: "A coffee, please." },
+      { es: "gracias", en: "thank you", note: "Core courtesy signal.", xes: "Gracias por tu ayuda.", xen: "Thank you for your help." },
+      { es: "perdon", en: "excuse me / sorry", note: "Attention or apology.", xes: "Perdon, donde esta el bano?", xen: "Excuse me, where is the bathroom?" },
+      { es: "me llamo", en: "my name is", note: "Literal: I call myself.", xes: "Me llamo Brendan.", xen: "My name is Brendan." },
+      { es: "mucho gusto", en: "nice to meet you", note: "First contact phrase.", xes: "Mucho gusto, soy Carlos.", xen: "Nice to meet you, I am Carlos." },
+      { es: "hasta luego", en: "see you later", note: "Common farewell.", xes: "Hasta luego, amigo.", xen: "See you later, friend." },
+    ],
+  },
+  {
+    id: "numbers",
+    tag: "02",
+    name: "Numerals",
+    sub: "Counting and quantities",
+    terms: [
+      { es: "cero", en: "zero", note: "", xes: "Cero errores.", xen: "Zero errors." },
+      { es: "uno", en: "one", note: "Becomes un/una before nouns.", xes: "Tengo un mensaje.", xen: "I have one message." },
+      { es: "dos", en: "two", note: "", xes: "Dos cafes, por favor.", xen: "Two coffees, please." },
+      { es: "cinco", en: "five", note: "", xes: "Son las cinco.", xen: "It is five o'clock." },
+      { es: "diez", en: "ten", note: "", xes: "Diez minutos.", xen: "Ten minutes." },
+      { es: "quince", en: "fifteen", note: "", xes: "Quince alertas.", xen: "Fifteen alerts." },
+      { es: "treinta", en: "thirty", note: "", xes: "Treinta segundos.", xen: "Thirty seconds." },
+      { es: "cien", en: "one hundred", note: "Ciento before smaller numbers.", xes: "Cien por ciento.", xen: "One hundred percent." },
+    ],
+  },
+  {
+    id: "sustenance",
+    tag: "03",
+    name: "Sustenance",
+    sub: "Food and ordering",
+    terms: [
+      { es: "el agua", en: "water", note: "Feminine noun with el.", xes: "Un vaso de agua, por favor.", xen: "A glass of water, please." },
+      { es: "el cafe", en: "coffee", note: "", xes: "Quiero un cafe.", xen: "I want a coffee." },
+      { es: "el pan", en: "bread", note: "", xes: "El pan esta caliente.", xen: "The bread is warm." },
+      { es: "la cuenta", en: "the check / bill", note: "", xes: "La cuenta, por favor.", xen: "The check, please." },
+      { es: "tengo hambre", en: "I am hungry", note: "Literal: I have hunger.", xes: "Tengo mucha hambre.", xen: "I am very hungry." },
+      { es: "tengo sed", en: "I am thirsty", note: "Literal: I have thirst.", xes: "Tengo sed despues del partido.", xen: "I am thirsty after the game." },
+      { es: "que recomienda", en: "what do you recommend", note: "Useful restaurant question.", xes: "Que recomienda?", xen: "What do you recommend?" },
+      { es: "sin picante", en: "not spicy", note: "Ordering constraint.", xes: "Sin picante, por favor.", xen: "Not spicy, please." },
+    ],
+  },
+  {
+    id: "movement",
+    tag: "04",
+    name: "Movement",
+    sub: "Travel and directions",
+    terms: [
+      { es: "donde esta", en: "where is", note: "Location question.", xes: "Donde esta la estacion?", xen: "Where is the station?" },
+      { es: "izquierda", en: "left", note: "", xes: "A la izquierda.", xen: "To the left." },
+      { es: "derecha", en: "right", note: "", xes: "A la derecha.", xen: "To the right." },
+      { es: "recto", en: "straight ahead", note: "", xes: "Siga recto.", xen: "Go straight." },
+      { es: "cerca", en: "near", note: "", xes: "Esta cerca.", xen: "It is nearby." },
+      { es: "lejos", en: "far", note: "", xes: "Esta lejos.", xen: "It is far away." },
+      { es: "el mapa", en: "the map", note: "Masculine despite -a.", xes: "Necesito el mapa.", xen: "I need the map." },
+      { es: "cuanto cuesta", en: "how much does it cost", note: "Buying tickets or food.", xes: "Cuanto cuesta el billete?", xen: "How much is the ticket?" },
+    ],
+  },
+  {
+    id: "timeline",
+    tag: "05",
+    name: "Timeline",
+    sub: "Days and time",
+    terms: [
+      { es: "hoy", en: "today", note: "", xes: "Hoy trabajo.", xen: "Today I work." },
+      { es: "manana", en: "tomorrow / morning", note: "Context decides.", xes: "Hasta manana.", xen: "See you tomorrow." },
+      { es: "ayer", en: "yesterday", note: "", xes: "Ayer estudie.", xen: "Yesterday I studied." },
+      { es: "ahora", en: "now", note: "", xes: "Ahora no puedo.", xen: "I cannot right now." },
+      { es: "la semana", en: "the week", note: "", xes: "Esta semana practico.", xen: "This week I practice." },
+      { es: "el dia", en: "the day", note: "Masculine despite -a.", xes: "El dia es largo.", xen: "The day is long." },
+      { es: "que hora es", en: "what time is it", note: "", xes: "Que hora es?", xen: "What time is it?" },
+      { es: "despues", en: "after / later", note: "Sequence connector.", xes: "Despues, escribo un informe.", xen: "Afterward, I write a report." },
+    ],
+  },
+  {
+    id: "verbs",
+    tag: "06",
+    name: "Core Verbs",
+    sub: "Present-tense operating verbs",
+    terms: [
+      { es: "ser", en: "to be, identity", note: "soy / eres / es", xes: "Soy analista.", xen: "I am an analyst." },
+      { es: "estar", en: "to be, state/place", note: "estoy / estas / esta", xes: "Estoy cansado.", xen: "I am tired." },
+      { es: "tener", en: "to have", note: "tengo / tienes / tiene", xes: "Tengo tiempo.", xen: "I have time." },
+      { es: "hacer", en: "to do / make", note: "hago / haces / hace", xes: "Que haces?", xen: "What are you doing?" },
+      { es: "ir", en: "to go", note: "voy / vas / va", xes: "Voy al trabajo.", xen: "I am going to work." },
+      { es: "querer", en: "to want", note: "quiero / quieres / quiere", xes: "Quiero aprender.", xen: "I want to learn." },
+      { es: "poder", en: "can / to be able", note: "puedo / puedes / puede", xes: "Puedes ayudarme?", xen: "Can you help me?" },
+      { es: "entender", en: "to understand", note: "entiendo / entiendes / entiende", xes: "No entiendo.", xen: "I do not understand." },
+    ],
+  },
+];
+
+TUTOR_DECKS.forEach((deck) => deck.terms.forEach((term, index) => (term.id = `${deck.id}:${index}`)));
+const TUTOR_ALL_TERMS = TUTOR_DECKS.flatMap((deck) => deck.terms.map((term) => ({ ...term, deck: deck.id })));
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -313,6 +431,407 @@ function clearIntake() {
   setStatus("Ready.");
 }
 
+function shuffle(items) {
+  const copy = items.slice();
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swap]] = [copy[swap], copy[index]];
+  }
+  return copy;
+}
+
+function getDeck(deckId) {
+  return TUTOR_DECKS.find((deck) => deck.id === deckId) || TUTOR_DECKS[0];
+}
+
+function getStudyTerm() {
+  const deck = getDeck(state.tutor.selectedDeckId);
+  return deck.terms[state.tutor.studyIndex] || deck.terms[0];
+}
+
+function getTermLevel(termId) {
+  return state.tutor.mastery[termId] || 0;
+}
+
+function saveMastery() {
+  localStorage.setItem(TUTOR_STORAGE_KEY, JSON.stringify(state.tutor.mastery));
+}
+
+function loadMastery() {
+  try {
+    state.tutor.mastery = JSON.parse(localStorage.getItem(TUTOR_STORAGE_KEY) || "{}");
+  } catch {
+    state.tutor.mastery = {};
+  }
+}
+
+function bumpTerm(termId, delta) {
+  const next = Math.max(0, Math.min(TUTOR_MAX_SIGNAL, getTermLevel(termId) + delta));
+  state.tutor.mastery[termId] = next;
+  saveMastery();
+  renderTutor();
+}
+
+function deckProgress(deck) {
+  const total = deck.terms.length * TUTOR_MAX_SIGNAL;
+  const current = deck.terms.reduce((sum, term) => sum + getTermLevel(term.id), 0);
+  return total ? current / total : 0;
+}
+
+function overallProgress() {
+  const total = TUTOR_ALL_TERMS.length * TUTOR_MAX_SIGNAL;
+  const current = TUTOR_ALL_TERMS.reduce((sum, term) => sum + getTermLevel(term.id), 0);
+  return total ? current / total : 0;
+}
+
+function renderSignalBars(node, level) {
+  const safeLevel = Math.max(0, Math.min(TUTOR_MAX_SIGNAL, level));
+  node.innerHTML = [0, 1, 2, 3, 4]
+    .map((bar) => {
+      const on = bar < safeLevel;
+      const locked = safeLevel >= TUTOR_MAX_SIGNAL;
+      return `<span class="signal-bar ${on ? "on" : ""} ${on && locked ? "locked" : ""}" style="height:${9 + bar * 4}px"></span>`;
+    })
+    .join("");
+}
+
+function updateOverallSignal() {
+  const progress = overallProgress();
+  renderSignalBars($("overallSignalBars"), Math.round(progress * TUTOR_MAX_SIGNAL));
+  $("overallSignalPercent").textContent = `${Math.round(progress * 100)}%`;
+}
+
+function setTutorTab(tab) {
+  state.tutor.activeTab = tab;
+  document.querySelectorAll(".tutor-tab").forEach((button) => {
+    button.classList.toggle("active", button.dataset.tutorTab === tab);
+  });
+  ["decks", "study", "drill", "coach", "status"].forEach((name) => {
+    $(`tutor${name[0].toUpperCase()}${name.slice(1)}View`).hidden = name !== tab;
+  });
+  if (tab === "drill" && !state.tutor.drill) {
+    nextDrill();
+  }
+  renderTutor();
+}
+
+function renderDeckGrid() {
+  $("deckGrid").innerHTML = TUTOR_DECKS.map((deck) => {
+    const progress = deckProgress(deck);
+    return `
+      <button class="deck-card" type="button" data-deck-id="${deck.id}">
+        <span>${deck.tag}</span>
+        <strong>${escapeHtml(deck.name)}</strong>
+        <span>${escapeHtml(deck.sub)}</span>
+        <div class="deck-meta">
+          <span>${deck.terms.length} terms</span>
+          <div class="signal-bars">${[0, 1, 2, 3, 4]
+            .map((bar) => `<span class="signal-bar ${bar < Math.round(progress * TUTOR_MAX_SIGNAL) ? "on" : ""}" style="height:${9 + bar * 4}px"></span>`)
+            .join("")}</div>
+          <span>${Math.round(progress * 100)}%</span>
+        </div>
+      </button>
+    `;
+  }).join("");
+
+  document.querySelectorAll(".deck-card").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.tutor.selectedDeckId = button.dataset.deckId;
+      state.tutor.studyIndex = 0;
+      state.tutor.flashFlipped = false;
+      setTutorTab("study");
+    });
+  });
+}
+
+function renderStudy() {
+  const deck = getDeck(state.tutor.selectedDeckId);
+  const term = getStudyTerm();
+  $("studyDeckName").textContent = deck.name;
+  $("studyCounter").textContent = `${String(state.tutor.studyIndex + 1).padStart(2, "0")} / ${String(deck.terms.length).padStart(2, "0")}`;
+  renderSignalBars($("studySignalBars"), getTermLevel(term.id));
+
+  if (state.tutor.flashFlipped) {
+    $("flashSide").textContent = "EN";
+    $("flashPrimary").textContent = term.en;
+    $("flashNote").textContent = term.xen || "Meaning revealed.";
+    $("flashExample").textContent = term.xes ? term.xes : "";
+  } else {
+    $("flashSide").textContent = "ES";
+    $("flashPrimary").textContent = term.es;
+    $("flashNote").textContent = term.note || "tap to reveal";
+    $("flashExample").textContent = term.xes ? term.xes : "";
+  }
+}
+
+function moveStudy(delta) {
+  const deck = getDeck(state.tutor.selectedDeckId);
+  state.tutor.studyIndex = (state.tutor.studyIndex + delta + deck.terms.length) % deck.terms.length;
+  state.tutor.flashFlipped = false;
+  renderStudy();
+}
+
+function speakSpanish(text) {
+  try {
+    if (!window.speechSynthesis) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "es-ES";
+    utterance.rate = 0.9;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    // Speech synthesis is a progressive enhancement.
+  }
+}
+
+function renderDrillScope() {
+  $("drillScope").innerHTML = [
+    '<option value="all">All Decks</option>',
+    ...TUTOR_DECKS.map((deck) => `<option value="${deck.id}">${escapeHtml(deck.name)}</option>`),
+  ].join("");
+  $("drillScope").value = state.tutor.drillScope;
+}
+
+function drillPool() {
+  if (state.tutor.drillScope === "all") return TUTOR_ALL_TERMS;
+  return TUTOR_ALL_TERMS.filter((term) => term.deck === state.tutor.drillScope);
+}
+
+function nextDrill() {
+  const pool = drillPool();
+  const ranked = pool.slice().sort((a, b) => getTermLevel(a.id) - getTermLevel(b.id));
+  const weakWindow = ranked.slice(0, Math.max(4, Math.ceil(ranked.length / 3)));
+  const target = weakWindow[Math.floor(Math.random() * weakWindow.length)] || pool[0];
+  const direction = Math.random() > 0.5 ? "es2en" : "en2es";
+  const answerKey = direction === "es2en" ? "en" : "es";
+  const prompt = direction === "es2en" ? target.es : target.en;
+  const distractors = shuffle(pool.filter((term) => term.id !== target.id && term[answerKey] !== target[answerKey]))
+    .slice(0, 3)
+    .map((term) => term[answerKey]);
+  state.tutor.drill = {
+    target,
+    direction,
+    prompt,
+    answer: target[answerKey],
+    options: shuffle([target[answerKey], ...distractors]),
+  };
+  state.tutor.drillPicked = null;
+  renderDrill();
+}
+
+function renderDrill() {
+  const drill = state.tutor.drill;
+  $("drillHits").textContent = `Hits ${state.tutor.drillRight}/${state.tutor.drillSeen}`;
+  $("drillStreak").textContent = `Streak ${state.tutor.drillStreak}`;
+  if (!drill) {
+    $("drillCard").innerHTML = '<p class="list-empty">No drill loaded.</p>';
+    return;
+  }
+  const picked = state.tutor.drillPicked;
+  $("drillCard").innerHTML = `
+    <span class="drill-direction">${drill.direction === "es2en" ? "Translate to English" : "Translate to Spanish"}</span>
+    <p class="drill-prompt">${escapeHtml(drill.prompt)}</p>
+    <div class="option-grid">
+      ${drill.options
+        .map((option, index) => {
+          const klass = picked ? (option === drill.answer ? "correct" : option === picked ? "wrong" : "") : "";
+          return `
+            <button class="option-button ${klass}" type="button" data-option="${escapeHtml(option)}" ${picked ? "disabled" : ""}>
+              <span class="option-num">${index + 1}</span>
+              <span>${escapeHtml(option)}</span>
+            </button>
+          `;
+        })
+        .join("")}
+    </div>
+    ${
+      picked
+        ? `<div class="drill-feedback">
+            <strong>${picked === drill.answer ? "Signal locked" : "Missed signal"}</strong>
+            <p>${escapeHtml(drill.target.xes || drill.target.es)} ${escapeHtml(drill.target.xen || "")}</p>
+            <button id="nextDrillButton" class="primary-button" type="button">Next Drill</button>
+          </div>`
+        : ""
+    }
+  `;
+
+  document.querySelectorAll(".option-button").forEach((button) => {
+    button.addEventListener("click", () => chooseDrill(button.dataset.option));
+  });
+  const nextButton = $("nextDrillButton");
+  if (nextButton) nextButton.addEventListener("click", nextDrill);
+}
+
+function chooseDrill(option) {
+  if (!state.tutor.drill || state.tutor.drillPicked) return;
+  state.tutor.drillPicked = option;
+  const correct = option === state.tutor.drill.answer;
+  state.tutor.drillSeen += 1;
+  if (correct) {
+    state.tutor.drillRight += 1;
+    state.tutor.drillStreak += 1;
+    bumpTerm(state.tutor.drill.target.id, 1);
+    if (state.tutor.drill.direction === "es2en") speakSpanish(state.tutor.drill.target.es);
+  } else {
+    state.tutor.drillStreak = 0;
+    bumpTerm(state.tutor.drill.target.id, -1);
+  }
+  renderDrill();
+}
+
+function renderTutorStatus() {
+  $("tutorStatusGrid").innerHTML = TUTOR_DECKS.map((deck) => {
+    const progress = deckProgress(deck);
+    return `
+      <div class="status-card">
+        <strong>${deck.tag} ${escapeHtml(deck.name)}</strong>
+        <div class="progress-track"><div class="progress-fill" style="width:${Math.round(progress * 100)}%"></div></div>
+        <p class="list-empty">${Math.round(progress * 100)}% signal / ${deck.terms.length} terms</p>
+      </div>
+    `;
+  }).join("");
+
+  const distribution = [0, 0, 0, 0, 0, 0];
+  TUTOR_ALL_TERMS.forEach((term) => {
+    distribution[getTermLevel(term.id)] += 1;
+  });
+  const max = Math.max(...distribution, 1);
+  $("signalDistribution").innerHTML = distribution
+    .map((count, level) => `
+      <div class="dist-card">
+        <div class="dist-bar" style="height:${Math.max(2, Math.round((count / max) * 88))}px"></div>
+        <strong>${count}</strong>
+        <span>L${level}</span>
+      </div>
+    `)
+    .join("");
+}
+
+function addCoachMessage(role, body, cards = null) {
+  state.tutor.coachMessages.push({ role, body, cards });
+  renderCoachMessages();
+}
+
+function renderCoachMessages() {
+  if (!state.tutor.coachMessages.length) {
+    $("coachMessages").innerHTML = `
+      <div class="coach-message">
+        <strong>Tutor</strong>
+        <p>Ready. Ask about the active lesson, a deck term, a sentence, or a writing pattern.</p>
+      </div>
+    `;
+    return;
+  }
+
+  $("coachMessages").innerHTML = state.tutor.coachMessages
+    .map((message) => `
+      <div class="coach-message ${message.role === "user" ? "user" : ""}">
+        <strong>${message.role === "user" ? "You" : "Tutor"}</strong>
+        <p>${escapeHtml(message.body)}</p>
+        ${message.cards ? `<pre>${escapeHtml(JSON.stringify(message.cards, null, 2))}</pre>` : ""}
+      </div>
+    `)
+    .join("");
+  $("coachMessages").scrollTop = $("coachMessages").scrollHeight;
+}
+
+async function sendCoach(action = null, overrideMessage = null) {
+  const message = (overrideMessage ?? $("coachInput").value).trim();
+  if (!message && !state.activeLesson && !getStudyTerm()) {
+    setStatus("Ask the tutor a question first.", true);
+    return;
+  }
+
+  if (message) addCoachMessage("user", message);
+  $("sendCoachButton").disabled = true;
+  try {
+    const term = getStudyTerm();
+    const result = await api("/tutor/respond", {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+        action,
+        lesson_id: state.activeLesson?.id || null,
+        selected_term: term ? `${term.es} = ${term.en}` : null,
+        selected_deck: getDeck(state.tutor.selectedDeckId).name,
+      }),
+    });
+    addCoachMessage("assistant", result.reply, result.cards);
+    $("coachInput").value = "";
+    setStatus(`Tutor action: ${result.action}.`);
+  } catch (error) {
+    setStatus(error.message, true);
+  } finally {
+    $("sendCoachButton").disabled = false;
+  }
+}
+
+function renderTutor() {
+  updateOverallSignal();
+  renderDeckGrid();
+  renderStudy();
+  renderDrillScope();
+  renderDrill();
+  renderTutorStatus();
+  renderCoachMessages();
+}
+
+function initializeTutor() {
+  loadMastery();
+  renderDrillScope();
+  nextDrill();
+  setTutorTab("decks");
+}
+
+function bindTutorEvents() {
+  document.querySelectorAll(".tutor-tab").forEach((button) => {
+    button.addEventListener("click", () => setTutorTab(button.dataset.tutorTab));
+  });
+  $("resetTutorProgressButton").addEventListener("click", () => {
+    state.tutor.mastery = {};
+    saveMastery();
+    renderTutor();
+    setStatus("Tutor progress reset.");
+  });
+  $("backToDecksButton").addEventListener("click", () => setTutorTab("decks"));
+  $("flashcard").addEventListener("click", () => {
+    state.tutor.flashFlipped = !state.tutor.flashFlipped;
+    renderStudy();
+  });
+  $("previousTermButton").addEventListener("click", () => moveStudy(-1));
+  $("nextTermButton").addEventListener("click", () => moveStudy(1));
+  $("speakTermButton").addEventListener("click", () => speakSpanish(getStudyTerm().es));
+  $("coachTermButton").addEventListener("click", () => {
+    const term = getStudyTerm();
+    setTutorTab("coach");
+    $("coachInput").value = `Explain ${term.es} and give me 3 usable Spanish examples.`;
+  });
+  $("missedTermButton").addEventListener("click", () => {
+    bumpTerm(getStudyTerm().id, -1);
+    moveStudy(1);
+  });
+  $("gotTermButton").addEventListener("click", () => {
+    bumpTerm(getStudyTerm().id, 1);
+    moveStudy(1);
+  });
+  $("drillScope").addEventListener("change", () => {
+    state.tutor.drillScope = $("drillScope").value;
+    state.tutor.drillSeen = 0;
+    state.tutor.drillRight = 0;
+    state.tutor.drillStreak = 0;
+    nextDrill();
+  });
+  $("sendCoachButton").addEventListener("click", () => sendCoach());
+  $("coachInput").addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      sendCoach();
+    }
+  });
+  document.querySelectorAll("[data-coach-action]").forEach((button) => {
+    button.addEventListener("click", () => sendCoach(button.dataset.coachAction));
+  });
+}
+
 function bindEvents() {
   $("generateLessonButton").addEventListener("click", importAndGenerate);
   $("clearButton").addEventListener("click", clearIntake);
@@ -328,7 +847,9 @@ function bindEvents() {
   $("runAutopsyButton").addEventListener("click", runAutopsy);
   $("submitWritingButton").addEventListener("click", submitWriting);
   $("exportLessonButton").addEventListener("click", exportLesson);
+  bindTutorEvents();
 }
 
 bindEvents();
+initializeTutor();
 refreshDashboard().catch((error) => setStatus(error.message, true));
