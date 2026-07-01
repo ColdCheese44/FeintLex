@@ -465,10 +465,50 @@ function loadMastery() {
   }
 }
 
+let masterySyncTimer = null;
+
+async function pushMastery() {
+  // Send every deck term so level 0 (including resets) overwrites the server.
+  const items = TUTOR_ALL_TERMS.map((term) => ({
+    term_id: term.id,
+    deck_id: term.deck,
+    term: term.es,
+    translation: term.en,
+    level: getTermLevel(term.id),
+    seen: 0,
+    correct: 0,
+  }));
+  try {
+    await api("/tutor/mastery", { method: "PUT", body: JSON.stringify({ items }) });
+  } catch {
+    // Backend sync is a progressive enhancement; localStorage still holds progress.
+  }
+}
+
+function scheduleMasterySync() {
+  clearTimeout(masterySyncTimer);
+  masterySyncTimer = setTimeout(pushMastery, 1500);
+}
+
+async function pullMastery() {
+  try {
+    const rows = await api("/tutor/mastery");
+    rows.forEach((row) => {
+      const local = state.tutor.mastery[row.term_id] || 0;
+      state.tutor.mastery[row.term_id] = Math.max(local, row.level);
+    });
+    saveMastery();
+    renderTutor();
+  } catch {
+    // Offline-tolerant: keep local mastery.
+  }
+}
+
 function bumpTerm(termId, delta) {
   const next = Math.max(0, Math.min(TUTOR_MAX_SIGNAL, getTermLevel(termId) + delta));
   state.tutor.mastery[termId] = next;
   saveMastery();
+  scheduleMasterySync();
   renderTutor();
 }
 
@@ -707,8 +747,179 @@ function renderTutorStatus() {
     .join("");
 }
 
-function addCoachMessage(role, body, cards = null) {
-  state.tutor.coachMessages.push({ role, body, cards });
+function renderConjugationCard(card) {
+  const tenses = Object.entries(card.tenses || {})
+    .map(([tense, rows]) => `
+      <div class="conj-tense">
+        <h5>${escapeHtml((card.tense_labels || {})[tense] || tense)}</h5>
+        <table class="conj-table">
+          ${rows.map((row) => `<tr><td>${escapeHtml(row.person)}</td><td><strong>${escapeHtml(row.form)}</strong></td></tr>`).join("")}
+        </table>
+      </div>
+    `)
+    .join("");
+  return `
+    <div class="chat-card">
+      <div class="chat-card-head">
+        <strong>${escapeHtml(card.verb)}</strong>
+        <span>${escapeHtml(card.translation || "")}${card.is_irregular ? " · irregular" : " · regular"}</span>
+        <button class="chat-speak" type="button" data-speak="${escapeHtml(card.verb)}">Say It</button>
+      </div>
+      <div class="conj-grid">${tenses}</div>
+    </div>
+  `;
+}
+
+function renderLookupCard(card) {
+  if (card.direction === "en_to_es" && card.matches) {
+    const rows = card.matches
+      .map((m) => `<li><strong>${escapeHtml(m.es)}</strong> — ${escapeHtml(m.en)} <button class="chat-speak" type="button" data-speak="${escapeHtml(m.es)}">Say It</button></li>`)
+      .join("");
+    return `<div class="chat-card"><ul class="lookup-list">${rows}</ul><p class="card-next">${escapeHtml(card.next_step || "")}</p></div>`;
+  }
+  return `
+    <div class="chat-card">
+      <div class="chat-card-head">
+        <strong>${escapeHtml(card.term)}</strong>
+        <span>${escapeHtml(card.translation || "not in offline lexicon")}</span>
+        <button class="chat-speak" type="button" data-speak="${escapeHtml(card.term)}">Say It</button>
+      </div>
+      <p class="card-next">${escapeHtml(card.next_step || "")}</p>
+    </div>
+  `;
+}
+
+function renderGrammarCard(card) {
+  return `
+    <div class="chat-card">
+      <h5>${escapeHtml(card.title)}</h5>
+      <ul>${(card.points || []).map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul>
+      ${(card.examples || [])
+        .map(
+          (example) => `
+            <p class="chat-example"><strong>${escapeHtml(example.es)}</strong> ${escapeHtml(example.en)}
+              <button class="chat-speak" type="button" data-speak="${escapeHtml(example.es)}">Say It</button></p>
+          `,
+        )
+        .join("")}
+      <p class="card-next">Practice: ${escapeHtml(card.practice || "")}</p>
+    </div>
+  `;
+}
+
+function renderQuizCard(card, cardIndex) {
+  const questions = (card.questions || [])
+    .map(
+      (question, questionIndex) => `
+        <div class="chat-quiz" data-answer="${escapeHtml(question.answer)}">
+          <p class="drill-prompt">${escapeHtml(question.prompt)}
+            <button class="chat-speak" type="button" data-speak="${escapeHtml(question.prompt)}">Say It</button></p>
+          <div class="option-grid">
+            ${question.options
+              .map(
+                (option) => `
+                  <button class="option-button chat-quiz-option" type="button" data-option="${escapeHtml(option)}">
+                    <span>${escapeHtml(option)}</span>
+                  </button>
+                `,
+              )
+              .join("")}
+          </div>
+          <p class="quiz-source">${escapeHtml(question.source || "")}</p>
+        </div>
+      `,
+    )
+    .join("");
+  return `<div class="chat-card">${questions}</div>`;
+}
+
+function renderAutopsyCard(card) {
+  const connectors = (card.connectors || []).map((item) => `${item.term} (${item.role})`).join(", ");
+  return `
+    <div class="chat-card">
+      <p class="chat-example"><strong>${escapeHtml(card.original)}</strong>
+        <button class="chat-speak" type="button" data-speak="${escapeHtml(card.original)}">Say It</button></p>
+      <p><span class="card-label">Literal</span> ${escapeHtml(card.literal_translation || "")}</p>
+      <p><span class="card-label">Natural</span> ${escapeHtml(card.natural_translation || "")}</p>
+      <p><span class="card-label">Verbs</span> ${escapeHtml((card.verbs || []).join(", ") || "none detected")}</p>
+      <p><span class="card-label">Connectors</span> ${escapeHtml(connectors || "none detected")}</p>
+      <p><span class="card-label">Pattern</span> ${escapeHtml(card.pattern || "")}</p>
+      <ul>${(card.grammar_notes || []).map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+      <p class="card-next">${escapeHtml(card.practice_prompt || "")}</p>
+    </div>
+  `;
+}
+
+function renderWritingCard(card) {
+  const issues = (card.issues || [])
+    .map(
+      (issue) => `
+        <li><strong>${escapeHtml(issue.original)}</strong> → <strong class="fix">${escapeHtml(issue.correction)}</strong><br />
+        <span>${escapeHtml(issue.explanation)}</span></li>
+      `,
+    )
+    .join("");
+  return `
+    <div class="chat-card">
+      <p><span class="card-label">Corrected</span> ${escapeHtml(card.corrected_version || "")}</p>
+      ${issues ? `<ul class="issue-list">${issues}</ul>` : ""}
+      <ul>${(card.strengths || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      <p class="card-next">${escapeHtml(card.rewrite_prompt || "")}</p>
+    </div>
+  `;
+}
+
+function renderStudyPlanCard(card) {
+  const weak = (card.weak_terms || [])
+    .map((item) => `<li><strong>${escapeHtml(item.term)}</strong> ${escapeHtml(item.translation || "")} — L${escapeHtml(item.level)}</li>`)
+    .join("");
+  return `
+    <div class="chat-card">
+      <ol>${(card.steps || []).map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+      ${weak ? `<p class="card-label">Weak terms</p><ul>${weak}</ul>` : ""}
+    </div>
+  `;
+}
+
+function renderExplanationCard(card) {
+  return `
+    <div class="chat-card">
+      ${card.literal_gloss ? `<p><span class="card-label">Gloss</span> ${escapeHtml(card.literal_gloss)}</p>` : ""}
+      ${(card.vocabulary || []).length
+        ? `<div class="chip-field">${card.vocabulary
+            .map((item) => `<span class="chip"><strong>${escapeHtml(item.term)}</strong></span>`)
+            .join("")}</div>`
+        : ""}
+      <p class="card-next">${escapeHtml(card.next_step || "")}</p>
+    </div>
+  `;
+}
+
+function renderCardHtml(card, index) {
+  switch (card.type) {
+    case "conjugation_table":
+      return renderConjugationCard(card);
+    case "term_lookup":
+      return renderLookupCard(card);
+    case "grammar_guide":
+      return renderGrammarCard(card);
+    case "quiz":
+      return renderQuizCard(card, index);
+    case "autopsy":
+      return renderAutopsyCard(card);
+    case "writing_feedback":
+      return renderWritingCard(card);
+    case "study_plan":
+      return renderStudyPlanCard(card);
+    case "explanation":
+      return renderExplanationCard(card);
+    default:
+      return `<pre>${escapeHtml(JSON.stringify(card, null, 2))}</pre>`;
+  }
+}
+
+function addCoachMessage(role, body, cards = null, pending = false) {
+  state.tutor.coachMessages.push({ role, body, cards, pending });
   renderCoachMessages();
 }
 
@@ -717,7 +928,7 @@ function renderCoachMessages() {
     $("coachMessages").innerHTML = `
       <div class="coach-message">
         <strong>Tutor</strong>
-        <p>Ready. Ask about the active lesson, a deck term, a sentence, or a writing pattern.</p>
+        <p>Ready. Try: "conjugate tener", "ser vs estar", "quiz me", "what does amenaza mean", or "correct: &lt;tu texto&gt;".</p>
       </div>
     `;
     return;
@@ -725,44 +936,96 @@ function renderCoachMessages() {
 
   $("coachMessages").innerHTML = state.tutor.coachMessages
     .map((message) => `
-      <div class="coach-message ${message.role === "user" ? "user" : ""}">
+      <div class="coach-message ${message.role === "user" ? "user" : ""} ${message.pending ? "pending" : ""}">
         <strong>${message.role === "user" ? "You" : "Tutor"}</strong>
         <p>${escapeHtml(message.body)}</p>
-        ${message.cards ? `<pre>${escapeHtml(JSON.stringify(message.cards, null, 2))}</pre>` : ""}
+        ${(message.cards || []).map((card, index) => renderCardHtml(card, index)).join("")}
       </div>
     `)
     .join("");
   $("coachMessages").scrollTop = $("coachMessages").scrollHeight;
 }
 
-async function sendCoach(action = null, overrideMessage = null) {
+function renderCoachSuggestions(suggestions) {
+  $("coachSuggestions").innerHTML = (suggestions || [])
+    .map((text) => `<button class="suggestion-chip" type="button" data-suggestion="${escapeHtml(text)}">${escapeHtml(text)}</button>`)
+    .join("");
+}
+
+async function loadCoachHistory() {
+  try {
+    const history = await api("/tutor/chat/history?limit=40");
+    state.tutor.coachMessages = history.map((row) => ({
+      role: row.role === "user" ? "user" : "assistant",
+      body: row.content,
+      cards: row.cards || [],
+    }));
+    renderCoachMessages();
+  } catch {
+    // History is a progressive enhancement; offline chat still works.
+  }
+}
+
+async function clearCoachHistory() {
+  try {
+    await api("/tutor/chat/history", { method: "DELETE" });
+    state.tutor.coachMessages = [];
+    renderCoachMessages();
+    renderCoachSuggestions([]);
+    setStatus("Tutor chat cleared.");
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+async function sendCoach(overrideMessage = null) {
   const message = (overrideMessage ?? $("coachInput").value).trim();
-  if (!message && !state.activeLesson && !getStudyTerm()) {
-    setStatus("Ask the tutor a question first.", true);
+  if (!message) {
+    setStatus("Type a question for the tutor first.", true);
     return;
   }
 
-  if (message) addCoachMessage("user", message);
+  addCoachMessage("user", message);
+  addCoachMessage("assistant", "…", null, true);
+  $("coachInput").value = "";
   $("sendCoachButton").disabled = true;
   try {
-    const term = getStudyTerm();
-    const result = await api("/tutor/respond", {
+    const result = await api("/tutor/chat", {
       method: "POST",
       body: JSON.stringify({
         message,
-        action,
         lesson_id: state.activeLesson?.id || null,
-        selected_term: term ? `${term.es} = ${term.en}` : null,
-        selected_deck: getDeck(state.tutor.selectedDeckId).name,
       }),
     });
+    state.tutor.coachMessages.pop();
     addCoachMessage("assistant", result.reply, result.cards);
-    $("coachInput").value = "";
-    setStatus(`Tutor action: ${result.action}.`);
+    renderCoachSuggestions(result.suggestions);
+    setStatus(`Tutor intent: ${result.intent} (${result.provider}).`);
   } catch (error) {
+    state.tutor.coachMessages.pop();
+    renderCoachMessages();
     setStatus(error.message, true);
   } finally {
     $("sendCoachButton").disabled = false;
+    $("coachInput").focus();
+  }
+}
+
+function handleCoachClick(event) {
+  const speakButton = event.target.closest(".chat-speak");
+  if (speakButton) {
+    speakSpanish(speakButton.dataset.speak);
+    return;
+  }
+  const optionButton = event.target.closest(".chat-quiz-option");
+  if (optionButton && !optionButton.disabled) {
+    const quiz = optionButton.closest(".chat-quiz");
+    const answer = quiz.dataset.answer;
+    quiz.querySelectorAll(".chat-quiz-option").forEach((button) => {
+      button.disabled = true;
+      if (button.dataset.option === answer) button.classList.add("correct");
+      else if (button === optionButton) button.classList.add("wrong");
+    });
   }
 }
 
@@ -781,6 +1044,8 @@ function initializeTutor() {
   renderDrillScope();
   nextDrill();
   setTutorTab("decks");
+  pullMastery().then(pushMastery);
+  loadCoachHistory();
 }
 
 function bindTutorEvents() {
@@ -790,6 +1055,7 @@ function bindTutorEvents() {
   $("resetTutorProgressButton").addEventListener("click", () => {
     state.tutor.mastery = {};
     saveMastery();
+    pushMastery();
     renderTutor();
     setStatus("Tutor progress reset.");
   });
@@ -822,13 +1088,30 @@ function bindTutorEvents() {
     nextDrill();
   });
   $("sendCoachButton").addEventListener("click", () => sendCoach());
+  $("clearCoachButton").addEventListener("click", clearCoachHistory);
   $("coachInput").addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
       sendCoach();
     }
   });
+  $("coachMessages").addEventListener("click", handleCoachClick);
+  $("coachSuggestions").addEventListener("click", (event) => {
+    const chip = event.target.closest(".suggestion-chip");
+    if (chip) sendCoach(chip.dataset.suggestion);
+  });
   document.querySelectorAll("[data-coach-action]").forEach((button) => {
-    button.addEventListener("click", () => sendCoach(button.dataset.coachAction));
+    button.addEventListener("click", () => {
+      const prompts = {
+        explain: "Explain the most useful grammar pattern in my active lesson.",
+        quiz: "Quiz me on my weakest terms.",
+        autopsy: `Autopsy: ${$("coachInput").value.trim() || "El equipo analiza la amenaza porque el sistema detecta actividad sospechosa."}`,
+        writing: $("coachInput").value.trim() ? `Correct: ${$("coachInput").value.trim()}` : "Give me a writing prompt about my active lesson.",
+        conjugate: `Conjugate ${$("coachInput").value.trim() || "tener"}`,
+        plan: "What should I study today?",
+      };
+      sendCoach(prompts[button.dataset.coachAction] || button.dataset.coachAction);
+    });
   });
 }
 

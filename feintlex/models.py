@@ -128,3 +128,30 @@ class ExportRecord(SQLModel, table=True):
     path: str
     format: str = "markdown"
     created_at: datetime = Field(default_factory=utc_now, index=True)
+
+
+class TutorChatMessage(SQLModel, table=True):
+    __tablename__ = "tutor_chat_messages"
+
+    id: int | None = Field(default=None, primary_key=True)
+    session_key: str = Field(default="default", index=True)
+    role: str = Field(index=True)  # "user" or "tutor"
+    content: str
+    intent: str | None = Field(default=None, index=True)
+    cards: JsonList = Field(default_factory=list, sa_column=Column(JSON))
+    provider: str = Field(default="offline_rule_based")
+    created_at: datetime = Field(default_factory=utc_now, index=True)
+
+
+class TutorMastery(SQLModel, table=True):
+    __tablename__ = "tutor_mastery"
+
+    id: int | None = Field(default=None, primary_key=True)
+    term_id: str = Field(index=True, unique=True)
+    deck_id: str = Field(default="", index=True)
+    term: str = ""
+    translation: str = ""
+    level: int = 0
+    seen: int = 0
+    correct: int = 0
+    updated_at: datetime = Field(default_factory=utc_now, index=True)

@@ -115,7 +115,43 @@ The dashboard now includes a Signal Tutor workspace inspired by the Senal Spanis
 - Tutor coach panel for explanations, quizzes, sentence autopsy, and writing prompts
 - Local progress persistence in browser storage
 
-The tutor is AI-ready but does not require a paid API. The first version uses the offline rule-based tutor endpoint at `/tutor/respond`.
+The tutor is AI-ready but does not require a paid API. Quick actions still use the offline rule-based endpoint at `/tutor/respond`, and the Coach tab now runs on the full chat engine below.
+
+## AI Tutor Chat
+
+The Coach tab is a real conversational tutor that runs fully offline:
+
+- **Verb conjugation engine**: regular -ar/-er/-ir verbs plus common irregulars (ser, estar, ir, tener, hacer, poder, querer, decir, venir, saber, ver, dar, ...) across present, preterite, imperfect, future, and conditional. Try `conjugate tener`.
+- **Offline lexicon**: word and phrase lookups in both directions. Try `what does amenaza mean` or `how do you say threat`.
+- **Grammar guides**: ser vs estar, por vs para, preterite vs imperfect, gender/articles, questions, negation, and connectors. Try `ser vs estar`.
+- **Targeted quizzes**: multiple-choice drills built from your weakest tracked terms and active-lesson vocabulary. Try `quiz me`.
+- **Sentence autopsy in chat**: `autopsy: El equipo detecta la amenaza.`
+- **Writing correction**: `correct: donde esta el problema?` returns fixes for inverted punctuation, capitalization, interrogative accents, and article-noun gender agreement, and files each issue into the mistake bank for spaced review.
+- **Study plans**: `what should I study?` blends weak terms, due mistakes, and the active lesson.
+- **Persistent chat history** per session key in SQLite (`/tutor/chat/history`).
+- **Persistent mastery**: flashcard/drill signal strength syncs to the backend (`/tutor/mastery`) so progress survives browser resets.
+
+Chat API:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8044/tutor/chat -Body '{"message":"conjugate tener"}' -ContentType "application/json"
+```
+
+Terminal chat:
+
+```powershell
+.\scripts\run_cli.ps1 chat                        # interactive REPL
+.\scripts\run_cli.ps1 chat -m "ser vs estar"      # one-shot
+```
+
+### Optional local AI enrichment (free, no cloud)
+
+Conversational replies can be enriched by a local [Ollama](https://ollama.com) model. This is strictly optional and fallback-first: if Ollama is not installed, not running, or errors, the rule-based tutor answers instead. Structured tools (conjugation, quizzes, autopsy) always stay deterministic.
+
+```powershell
+$env:FEINTLEX_AI_PROVIDER="ollama"
+$env:FEINTLEX_OLLAMA_MODEL="llama3.2"   # any local model you have pulled
+```
 
 ## API Examples
 
@@ -176,7 +212,9 @@ If `--file` points to an existing text file, FeintLex reads the file. Otherwise 
 | `FEINTLEX_DB_PATH` | SQLite path, default `data/feintlex.db` | No |
 | `FEINTLEX_LOG_LEVEL` | Python log level | No |
 | `FEINTLEX_EXPORT_DIR` | Markdown export directory | No |
-| `FEINTLEX_AI_PROVIDER` | Future provider selector, default `none` | No |
+| `FEINTLEX_AI_PROVIDER` | Tutor AI provider: `none` (default, offline rules) or `ollama` (local, free) | No |
+| `FEINTLEX_OLLAMA_URL` | Local Ollama server URL, default `http://127.0.0.1:11434` | No |
+| `FEINTLEX_OLLAMA_MODEL` | Local Ollama model name, default `llama3.2` | No |
 | `FEINT_BROWSER` | Browser preference for local launchers, default `brave` | No |
 | `FEINT_BROWSER_MODE` | Browser window mode: `fullscreen`, `maximized`, `normal`, `kiosk` | No |
 | `FEINT_BROWSER_PATH` | Optional explicit Brave executable path | No |

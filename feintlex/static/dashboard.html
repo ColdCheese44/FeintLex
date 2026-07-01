@@ -89,14 +89,18 @@
 
         <div id="tutorCoachView" class="tutor-view" hidden>
           <div id="coachMessages" class="coach-messages" aria-live="polite"></div>
+          <div id="coachSuggestions" class="coach-suggestions" aria-label="Suggested follow-ups"></div>
           <div class="coach-quick-actions">
             <button type="button" data-coach-action="explain">Explain</button>
             <button type="button" data-coach-action="quiz">Quiz</button>
             <button type="button" data-coach-action="autopsy">Autopsy</button>
             <button type="button" data-coach-action="writing">Writing</button>
+            <button type="button" data-coach-action="conjugate">Conjugate</button>
+            <button type="button" data-coach-action="plan">Plan</button>
+            <button id="clearCoachButton" type="button" title="Clear chat history">Clear</button>
           </div>
           <div class="coach-input-row">
-            <textarea id="coachInput" spellcheck="false" placeholder="Ask the tutor about a phrase, grammar pattern, weak term, or active lesson..."></textarea>
+            <textarea id="coachInput" spellcheck="false" placeholder="Ask anything: 'conjugate tener', 'ser vs estar', 'quiz me', 'correct: <tu texto>'... Enter to send."></textarea>
             <button id="sendCoachButton" class="primary-button" type="button">Send</button>
           </div>
         </div>

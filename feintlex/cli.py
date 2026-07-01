@@ -103,5 +103,30 @@ def review_due_command() -> None:
         print_json({"mistakes": mistakes})
 
 
+@app.command("chat")
+def chat_command(
+    message: str = typer.Option(None, "--message", "-m", help="One-shot message; omit for interactive mode."),
+    session_key: str = typer.Option("cli", "--session-key"),
+) -> None:
+    """Talk to the offline AI tutor from the terminal."""
+    from feintlex.services.tutor_chat import respond_chat
+
+    bootstrap()
+    with Session(get_engine()) as session:
+        if message:
+            print_json(respond_chat(session, message, session_key=session_key))
+            return
+        typer.echo("FeintLex tutor (offline). Type 'exit' to leave.")
+        while True:
+            user_input = typer.prompt("you")
+            if user_input.strip().lower() in {"exit", "quit", "salir"}:
+                typer.echo("Hasta luego.")
+                break
+            result = respond_chat(session, user_input, session_key=session_key)
+            typer.echo(f"tutor> {result['reply']}")
+            if result["cards"]:
+                print_json(result["cards"])
+
+
 if __name__ == "__main__":
     app()

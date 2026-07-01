@@ -5,6 +5,7 @@ import re
 from sqlmodel import Session
 
 from feintlex.models import SentenceAutopsy
+from feintlex.services.lexicon import coverage, gloss_tokens, literal_gloss
 from feintlex.services.vocabulary import SPANISH_STOPWORDS, extract_vocabulary, normalize_term, tokenize
 
 
@@ -98,9 +99,25 @@ def detect_tense_notes(sentence: str, verbs: list[str]) -> list[str]:
     if any(re.search(r"(are|era|eran|ara|aran)$", normalize_term(verb)) for verb in verbs):
         notes.append("Possible future or subjunctive marker detected.")
     if not notes:
-        notes.append("Rule-based MVP grammar scan found no strong tense marker.")
-    notes.append("TODO: replace placeholder translation and grammar notes with LLM-assisted analysis.")
+        notes.append("Rule-based grammar scan found no strong tense marker.")
     return notes
+
+
+def _natural_gloss(sentence: str) -> str:
+    """Best-effort natural reading assembled from the offline lexicon."""
+    glosses = gloss_tokens(sentence)
+    known = coverage(sentence)
+    words = []
+    for item in glosses:
+        english = item["en"]
+        if english == "?":
+            words.append(f"[{item['es']}]")
+        else:
+            # Take the first alternative when the gloss lists several.
+            words.append(english.split("/")[0].split("(")[0].strip())
+    reading = " ".join(words)
+    confidence = "high" if known >= 0.8 else "partial" if known >= 0.5 else "low"
+    return f"{reading} (offline gloss, {confidence} confidence — unknown words in brackets)"
 
 
 def autopsy_sentence(sentence: str) -> dict[str, object]:
@@ -117,8 +134,8 @@ def autopsy_sentence(sentence: str) -> dict[str, object]:
 
     return {
         "original": cleaned,
-        "literal_translation": "[MVP placeholder] Translate word-by-word during AI enhancement.",
-        "natural_translation": "[MVP placeholder] Produce a natural English translation during AI enhancement.",
+        "literal_translation": literal_gloss(cleaned),
+        "natural_translation": _natural_gloss(cleaned),
         "grammar_notes": grammar_notes,
         "verbs": verbs,
         "connectors": connectors,

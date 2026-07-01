@@ -24,7 +24,8 @@ def test_dashboard_assets_are_served(tmp_path, monkeypatch):
     assert css.status_code == 200
     assert js.status_code == 200
     assert "TUTOR_DECKS" in js.text
-    assert "/tutor/respond" in js.text
+    assert "/tutor/chat" in js.text
+    assert "/tutor/mastery" in js.text
     clear_engine_cache()
 
 
