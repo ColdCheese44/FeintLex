@@ -8,19 +8,37 @@
   </head>
   <body>
     <header class="topbar">
-      <div>
-        <p class="eyebrow">Language Intelligence Trainer</p>
-        <h1>FeintLex</h1>
+      <div class="hq-title">
+        <p class="eyebrow">Language Intelligence Command</p>
+        <h1>FeintLex HQ</h1>
+      </div>
+      <div class="hq-rank-block" title="XP from lessons, autopsies, writing, drills, and locked signals">
+        <div class="hq-rank-line">
+          <span class="hq-rank-insignia">★</span>
+          <strong id="hqRankName">Recruit</strong>
+          <span id="hqXpLine" class="hq-xp-line">0 XP</span>
+        </div>
+        <div class="xp-track"><div id="hqXpFill" class="xp-fill" style="width:0%"></div></div>
+        <span id="hqNextRank" class="hq-next-rank">Next: Field Trainee</span>
       </div>
       <div class="status-strip" aria-live="polite">
+        <span id="hqStreak" class="status-pill streak-pill" title="Consecutive training days">🔥 0</span>
+        <span id="hqMissions" class="status-pill" title="Today's protocol">🎯 0/6</span>
         <span id="healthStatus" class="status-pill">Checking</span>
         <span id="dbStatus" class="status-pill muted">SQLite</span>
         <span id="envStatus" class="status-pill muted">local</span>
       </div>
+      <nav class="hq-nav" aria-label="Sections">
+        <a href="#tutorSection">🎴 Tutor</a>
+        <a href="#intakeSection">📡 Intake</a>
+        <a href="#lessonSection">📋 Lesson</a>
+        <a href="#autopsySection">🔬 Autopsy</a>
+        <a href="#writingSection">✍️ Writing</a>
+      </nav>
     </header>
 
     <main class="shell">
-      <section class="panel tutor-panel" aria-labelledby="tutorTitle">
+      <section id="tutorSection" class="panel tutor-panel" aria-labelledby="tutorTitle">
         <div class="panel-heading tutor-heading">
           <div>
             <p class="eyebrow">Signal Tutor</p>
@@ -34,12 +52,12 @@
         </div>
 
         <div class="tutor-tabs" role="tablist" aria-label="Tutor workspace">
-          <button class="tutor-tab active" type="button" data-tutor-tab="decks">Decks</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="study">Study</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="drill">Drill</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="listen">Listen</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="coach">Coach</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="status">Status</button>
+          <button class="tutor-tab active" type="button" data-tutor-tab="decks">🗂 Decks</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="study">🎴 Study</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="drill">🎯 Drill</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="listen">📻 Listen</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="coach">🎙 Coach</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="status">📊 Status</button>
         </div>
 
         <div id="tutorDecksView" class="tutor-view">
@@ -134,10 +152,10 @@
         </div>
       </section>
 
-      <section class="panel intake-panel" aria-labelledby="intakeTitle">
+      <section id="intakeSection" class="panel intake-panel" aria-labelledby="intakeTitle">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Immersion</p>
+            <p class="eyebrow">📡 Immersion</p>
             <h2 id="intakeTitle">Source Intake</h2>
           </div>
           <select id="sourceType" aria-label="Source type">
@@ -168,23 +186,24 @@
 
         <div class="action-row">
           <button id="generateLessonButton" class="primary-button" type="button">Import + Generate</button>
+          <button id="sampleTextButton" type="button" title="Load a sample transmission to try the loop">Sample Intel</button>
           <button id="clearButton" type="button">Clear</button>
         </div>
         <p id="workStatus" class="work-status" aria-live="polite">Ready.</p>
       </section>
 
-      <section class="panel lesson-panel" aria-labelledby="lessonTitle">
+      <section id="lessonSection" class="panel lesson-panel" aria-labelledby="lessonTitle">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Sentence Autopsy -> Practice</p>
+            <p class="eyebrow">📋 Mission Brief</p>
             <h2 id="lessonTitle">Active Lesson</h2>
           </div>
           <button id="exportLessonButton" type="button" disabled>Export MD</button>
         </div>
 
         <article id="lessonOutput" class="lesson-output empty-state gloss-zone">
-          <h3>No lesson loaded</h3>
-          <p>Paste Spanish source text to generate the first drill.</p>
+          <h3>No mission brief yet</h3>
+          <p>Paste Spanish text into Source Intake — or hit <strong>Sample Intel</strong> for an instant transmission. HQ will build the full brief: summary, vocabulary, grammar, autopsy targets, and a writing prompt.</p>
         </article>
       </section>
 
@@ -192,7 +211,7 @@
         <section class="panel compact-panel" aria-labelledby="protocolTitle">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">The Protocol</p>
+              <p class="eyebrow">🧭 The Protocol</p>
               <h2 id="protocolTitle">Daily Missions</h2>
             </div>
             <span id="protocolPhase" class="status-pill muted">Phase</span>
@@ -203,7 +222,7 @@
         <section class="panel compact-panel" aria-labelledby="queueTitle">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Queue</p>
+              <p class="eyebrow">🗂 Archive</p>
               <h2 id="queueTitle">Recent Lessons</h2>
             </div>
             <button id="refreshButton" type="button">Refresh</button>
@@ -214,7 +233,7 @@
         <section class="panel compact-panel" aria-labelledby="vocabTitle">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Reinforcement</p>
+              <p class="eyebrow">📈 Reinforcement</p>
               <h2 id="vocabTitle">Vocabulary Watchlist</h2>
             </div>
           </div>
@@ -224,7 +243,7 @@
         <section class="panel compact-panel" aria-labelledby="reviewTitle">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Review</p>
+              <p class="eyebrow">⚡ Review</p>
               <h2 id="reviewTitle">Signal Queue</h2>
             </div>
             <span id="reviewCounter" class="status-pill muted">0 due</span>
@@ -233,10 +252,10 @@
         </section>
       </aside>
 
-      <section class="panel autopsy-panel" aria-labelledby="autopsyTitle">
+      <section id="autopsySection" class="panel autopsy-panel" aria-labelledby="autopsyTitle">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Codebreaking</p>
+            <p class="eyebrow">🔬 Codebreaking</p>
             <h2 id="autopsyTitle">Sentence Autopsy</h2>
           </div>
           <button id="runAutopsyButton" type="button">Analyze</button>
@@ -245,10 +264,10 @@
         <div id="autopsyOutput" class="structured-output gloss-zone"></div>
       </section>
 
-      <section class="panel writing-panel" aria-labelledby="writingTitle">
+      <section id="writingSection" class="panel writing-panel" aria-labelledby="writingTitle">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Correction</p>
+            <p class="eyebrow">✍️ Correction</p>
             <h2 id="writingTitle">Writing Practice</h2>
           </div>
           <button id="submitWritingButton" type="button">Submit</button>
@@ -259,6 +278,7 @@
     </main>
 
     <div id="hoverGloss" class="hover-gloss" hidden aria-hidden="true"></div>
+    <div id="toastHolder" class="toast-holder" aria-live="polite"></div>
 
     <script src="/static/dashboard.js"></script>
   </body>

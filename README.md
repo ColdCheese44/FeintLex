@@ -8,6 +8,8 @@ Core loop:
 Immersion -> Sentence Autopsy -> Practice -> Correction -> Reinforcement
 ```
 
+**HQ experience:** the dashboard is a command center — tactical rank ladder (Recruit → Spymaster) with XP earned from every lesson, autopsy, writing run, and locked signal (`GET /progress/hq`), a 🔥 daily streak, section navigation pills, toast feedback on every action, mission-complete celebrations, and a **Sample Intel** button for an instant start.
+
 **Training program:** see [PROGRAM.md](PROGRAM.md) — a research-backed, reading/writing-first Spanish protocol (Nation's four strands, frequency-first vocabulary, extensive reading, direct written corrective feedback, spaced retrieval). The dashboard's **Daily Missions** panel tracks the protocol live via `GET /program/today`, and the Core Signal decks (07-10) carry the top-frequency vocabulary the program prescribes.
 
 This first pass is intentionally boring and stable: SQLite, deterministic rule-based fallbacks, human-readable exports, structured logs, and no required paid AI APIs.

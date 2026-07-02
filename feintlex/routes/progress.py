@@ -15,6 +15,7 @@ from feintlex.models import (
     WritingSubmission,
     utc_now,
 )
+from feintlex.services.hq import build_hq_status
 from feintlex.services.mistake_bank import get_due_mistakes
 from feintlex.services.review_queue import build_review_queue, complete_review
 
@@ -54,6 +55,11 @@ def review_complete_route(payload: ReviewCompleteRequest, session: Session = Dep
 
 def _count(session: Session, statement) -> int:
     return session.exec(statement).one()
+
+
+@router.get("/progress/hq")
+def progress_hq_route(session: Session = Depends(get_session)):
+    return build_hq_status(session)
 
 
 @router.get("/progress/summary")

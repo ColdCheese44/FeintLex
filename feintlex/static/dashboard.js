@@ -265,7 +265,8 @@ function renderLesson(lesson) {
 
   if (!lesson) {
     $("lessonOutput").className = "lesson-output empty-state gloss-zone";
-    $("lessonOutput").innerHTML = "<h3>No lesson loaded</h3><p>Paste Spanish source text to generate the first drill.</p>";
+    $("lessonOutput").innerHTML =
+      "<h3>No mission brief yet</h3><p>Paste Spanish text into Source Intake — or hit <strong>Sample Intel</strong> for an instant transmission. HQ will build the full brief: summary, vocabulary, grammar, autopsy targets, and a writing prompt.</p>";
     return;
   }
 
@@ -431,6 +432,16 @@ async function gradeReview(result) {
       }
     }
     setStatus(`Review ${result === "got" ? "cleared" : "rescheduled"}.`);
+    if (result === "got") {
+      showToast("✅ Cleared from the queue.", "good", 1800);
+    } else {
+      showToast("↩ Rescheduled — it will come back.", "warn", 1800);
+    }
+    if (state.reviewIndex >= state.reviewQueue.length) {
+      showToast("🧹 Signal Queue clear. Well swept.", "gold", 3200);
+    }
+    scheduleHqRefresh();
+    scheduleProtocolRefresh();
   } catch (error) {
     setStatus(error.message, true);
   }
@@ -444,12 +455,32 @@ async function refreshReviewQueue() {
 }
 
 function renderProtocol(program) {
+  const previous = state.program;
   state.program = program;
+
+  // Celebrate missions that just flipped to done.
+  if (previous) {
+    const wasDone = new Set(previous.missions.filter((m) => m.done).map((m) => m.id));
+    program.missions.forEach((mission) => {
+      if (mission.done && !wasDone.has(mission.id)) {
+        showToast(`✅ Mission complete: ${mission.title}`, "good", 3200);
+      }
+    });
+  }
+  const trackable = program.missions.filter((m) => !m.manual);
+  const allDone = trackable.every((m) => m.done);
+  if (previous && allDone && !previous.missions.filter((m) => !m.manual).every((m) => m.done)) {
+    showToast("🏆 DAILY PROTOCOL COMPLETE — HQ standing by.", "gold", 5000);
+  }
+  $("hqMissions").textContent = `🎯 ${program.completed}/${program.total}`;
+  $("hqMissions").title = `${program.completed} of ${program.total} missions done today`;
+
   $("protocolPhase").textContent = `Phase ${program.phase}: ${program.name}`;
   const nextLine = program.next_threshold
     ? `${program.known_signals} / ${program.next_threshold} known signals to next phase`
     : `${program.known_signals} known signals — final phase`;
   $("protocolPanel").innerHTML = `
+    ${allDone ? '<p class="protocol-banner">🏆 Protocol complete. Outstanding work, agent.</p>' : ""}
     <p class="protocol-focus">${escapeHtml(program.focus)}</p>
     <div class="progress-track"><div class="progress-fill" style="width:${
       program.next_threshold ? Math.min(100, Math.round((program.known_signals / program.next_threshold) * 100)) : 100
@@ -529,6 +560,8 @@ async function importAndGenerate() {
     renderLesson(lesson);
     await refreshDashboard();
     setStatus(`Generated lesson #${lesson.id}.`);
+    showToast(`📋 Mission brief #${lesson.id} ready — read it through once.`, "good", 3200);
+    scheduleHqRefresh();
   } catch (error) {
     setStatus(error.message, true);
   } finally {
@@ -579,7 +612,15 @@ async function submitWriting() {
     });
     $("writingOutput").innerHTML = renderWritingCard(result);
     setStatus(`Writing submission #${result.id} stored. Detected issues feed the review queue.`);
+    const issueCount = (result.issues || []).length;
+    showToast(
+      issueCount ? `✍️ ${issueCount} correction(s) filed to the queue.` : "✍️ Clean copy — no issues found.",
+      issueCount ? "warn" : "good",
+      3000,
+    );
     await refreshReviewQueue();
+    scheduleHqRefresh();
+    scheduleProtocolRefresh();
   } catch (error) {
     setStatus(error.message, true);
   } finally {
@@ -597,6 +638,7 @@ async function exportLesson() {
   try {
     const result = await api(`/exports/lesson/${state.activeLesson.id}`, { method: "POST" });
     setStatus(`Export saved: ${result.path}`);
+    showToast("📦 Lesson exported to Markdown.", "good", 2200);
   } catch (error) {
     setStatus(error.message, true);
   } finally {
@@ -687,10 +729,17 @@ async function pullMastery() {
 }
 
 function bumpTerm(termId, delta) {
-  const next = Math.max(0, Math.min(TUTOR_MAX_SIGNAL, getTermLevel(termId) + delta));
+  const previous = getTermLevel(termId);
+  const next = Math.max(0, Math.min(TUTOR_MAX_SIGNAL, previous + delta));
   state.tutor.mastery[termId] = next;
+  if (next === TUTOR_MAX_SIGNAL && previous < TUTOR_MAX_SIGNAL) {
+    const meta = TUTOR_ALL_TERMS.find((term) => term.id === termId);
+    showToast(`🔒 SIGNAL LOCKED: ${meta ? meta.es : termId}`, "gold", 3600);
+  }
   saveMastery();
   scheduleMasterySync();
+  scheduleHqRefresh();
+  scheduleProtocolRefresh();
   renderTutor();
 }
 
@@ -900,6 +949,9 @@ function chooseDrill(option) {
     state.tutor.drillStreak += 1;
     bumpTerm(state.tutor.drill.target.id, 1);
     if (state.tutor.drill.direction === "es2en") speakSpanish(state.tutor.drill.target.es);
+    if (state.tutor.drillStreak > 0 && state.tutor.drillStreak % 5 === 0) {
+      showToast(`⚡ ${state.tutor.drillStreak}-hit streak!`, "good");
+    }
   } else {
     state.tutor.drillStreak = 0;
     bumpTerm(state.tutor.drill.target.id, -1);
@@ -1044,6 +1096,9 @@ function finishListen(correct, picked) {
     listen.right += 1;
     listen.streak += 1;
     bumpTerm(listen.item.target.id, 1);
+    if (listen.streak > 0 && listen.streak % 5 === 0) {
+      showToast(`📻 ${listen.streak} clean transmissions in a row!`, "good");
+    }
   } else {
     listen.streak = 0;
     bumpTerm(listen.item.target.id, -1);
@@ -1433,6 +1488,10 @@ function bindTutorEvents() {
   $("backToDecksButton").addEventListener("click", () => setTutorTab("decks"));
   $("flashcard").addEventListener("click", () => {
     state.tutor.flashFlipped = !state.tutor.flashFlipped;
+    const card = $("flashcard");
+    card.classList.remove("flipping");
+    void card.offsetWidth; // Restart the animation.
+    card.classList.add("flipping");
     renderStudy();
   });
   $("previousTermButton").addEventListener("click", () => moveStudy(-1));
@@ -1494,6 +1553,66 @@ function bindTutorEvents() {
       sendCoach(prompts[button.dataset.coachAction] || button.dataset.coachAction);
     });
   });
+}
+
+// --- HQ status bar and toasts ------------------------------------------------
+
+let hqRefreshTimer = null;
+
+async function loadHq() {
+  try {
+    const hq = await api("/progress/hq");
+    const previousRank = state.hqRank;
+    state.hqRank = hq.rank;
+    $("hqRankName").textContent = hq.rank;
+    $("hqXpLine").textContent = `${hq.xp} XP`;
+    $("hqXpFill").style.width = `${Math.round(hq.rank_progress * 100)}%`;
+    $("hqNextRank").textContent = hq.next_rank
+      ? `Next: ${hq.next_rank} at ${hq.next_rank_xp} XP`
+      : "Top of the ladder";
+    $("hqStreak").textContent = `🔥 ${hq.streak_days}`;
+    $("hqStreak").title = hq.active_today
+      ? `${hq.streak_days}-day streak — today is logged`
+      : `${hq.streak_days}-day streak — train today to keep it`;
+    $("hqStreak").classList.toggle("hot", hq.streak_days >= 3);
+    if (previousRank && previousRank !== hq.rank) {
+      showToast(`🎖️ PROMOTION: ${hq.rank}`, "gold", 4200);
+    }
+  } catch {
+    // HQ bar is a progressive enhancement.
+  }
+}
+
+function scheduleHqRefresh() {
+  clearTimeout(hqRefreshTimer);
+  hqRefreshTimer = setTimeout(loadHq, 1800);
+}
+
+let protocolRefreshTimer = null;
+
+function scheduleProtocolRefresh() {
+  clearTimeout(protocolRefreshTimer);
+  protocolRefreshTimer = setTimeout(async () => {
+    try {
+      renderProtocol(await api("/program/today"));
+    } catch {
+      // Protocol panel refresh is best-effort.
+    }
+  }, 2000);
+}
+
+function showToast(message, tone = "info", duration = 2600) {
+  const holder = $("toastHolder");
+  const node = document.createElement("div");
+  node.className = `toast ${tone}`;
+  node.textContent = message;
+  holder.appendChild(node);
+  while (holder.children.length > 4) holder.removeChild(holder.firstChild);
+  requestAnimationFrame(() => node.classList.add("show"));
+  setTimeout(() => {
+    node.classList.remove("show");
+    setTimeout(() => node.remove(), 350);
+  }, duration);
 }
 
 // --- Hover gloss dictionary --------------------------------------------------
@@ -1619,8 +1738,26 @@ function handleGlossHover(event) {
   tip.style.top = `${Math.max(4, top)}px`;
 }
 
+const SAMPLE_INTEL = [
+  "El equipo de seguridad detecta actividad sospechosa en la red porque un usuario abre un correo con un archivo peligroso. El analista revisa las alertas y escribe un informe claro. Después, el equipo cierra el acceso y protege el sistema. La investigación sigue porque hay más pistas en los datos.",
+  "El equipo gana el partido porque el delantero marca dos goles en la segunda parte. El portero hace una parada importante cuando el rival avanza. Después del partido, el entrenador explica el plan y los jugadores celebran con la gente. La temporada sigue la próxima semana.",
+  "El periodista investiga el caso porque una fuente habla de un acuerdo secreto. La policía busca evidencia en la oficina y encuentra documentos importantes. El gobierno responde con una declaración corta. Sin embargo, hay más preguntas que respuestas y la investigación continúa.",
+];
+
+function loadSampleIntel() {
+  const sample = SAMPLE_INTEL[Math.floor(Math.random() * SAMPLE_INTEL.length)];
+  $("sourceText").value = sample;
+  const topics = ["cybersecurity", "soccer", "investigation"][SAMPLE_INTEL.indexOf(sample)];
+  document.querySelectorAll('input[name="topic"]').forEach((input) => {
+    input.checked = input.value === topics;
+  });
+  setStatus("Sample intel loaded. Hit Import + Generate to build the mission brief.");
+  showToast("📡 Sample transmission received.", "info", 2200);
+}
+
 function bindEvents() {
   $("generateLessonButton").addEventListener("click", importAndGenerate);
+  $("sampleTextButton").addEventListener("click", loadSampleIntel);
   $("clearButton").addEventListener("click", clearIntake);
   $("refreshButton").addEventListener("click", async () => {
     setStatus("Refreshing dashboard...");
@@ -1645,4 +1782,5 @@ function bindEvents() {
 bindEvents();
 initializeTutor();
 loadLexicon();
+loadHq();
 refreshDashboard().catch((error) => setStatus(error.message, true));

@@ -101,9 +101,95 @@ textarea {
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 24px;
   padding: 24px clamp(16px, 3vw, 36px) 16px;
+}
+
+.hq-rank-block {
+  min-width: 220px;
+}
+
+.hq-rank-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hq-rank-insignia {
+  color: var(--amber);
+}
+
+.hq-rank-line strong {
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.hq-xp-line {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.xp-track {
+  height: 6px;
+  margin: 6px 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--black);
+  overflow: hidden;
+}
+
+.xp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--amber), var(--green));
+  transition: width 700ms ease;
+}
+
+.hq-next-rank {
+  color: var(--quiet);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.streak-pill.hot {
+  border-color: var(--border-hot);
+  background: rgba(201, 162, 39, 0.14);
+  color: #ffe9b0;
+}
+
+.hq-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.hq-nav a {
+  padding: 5px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition: border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.hq-nav a:hover {
+  border-color: var(--border-hot);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+section[id] {
+  scroll-margin-top: 16px;
 }
 
 .topbar h1,
@@ -825,6 +911,142 @@ textarea {
 .mission-detail {
   color: var(--muted);
   font-size: 12px;
+}
+
+.toast-holder {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1200;
+  display: grid;
+  gap: 8px;
+  max-width: 340px;
+}
+
+.toast {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  box-shadow: 0 10px 26px var(--shadow);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast.good {
+  border-color: var(--green);
+}
+
+.toast.warn {
+  border-color: rgba(214, 106, 95, 0.7);
+}
+
+.toast.gold {
+  border-color: var(--border-hot);
+  background: linear-gradient(180deg, rgba(201, 162, 39, 0.16), var(--surface-strong));
+}
+
+.protocol-banner {
+  margin: 0 0 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-hot);
+  border-radius: 6px;
+  background: rgba(201, 162, 39, 0.12);
+  color: #ffe9b0;
+  font-size: 13px;
+  animation: banner-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes banner-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(201, 162, 39, 0);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(201, 162, 39, 0.25);
+  }
+}
+
+.flashcard.flipping {
+  animation: card-flip 320ms ease;
+}
+
+@keyframes card-flip {
+  0% {
+    transform: perspective(700px) rotateX(0deg);
+  }
+  50% {
+    transform: perspective(700px) rotateX(88deg);
+  }
+  100% {
+    transform: perspective(700px) rotateX(0deg);
+  }
+}
+
+.option-button.correct {
+  animation: correct-pulse 420ms ease;
+}
+
+@keyframes correct-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.panel {
+  animation: panel-in 360ms ease both;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.deck-card {
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.deck-card:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .panel,
+  .flashcard.flipping,
+  .option-button.correct,
+  .protocol-banner {
+    animation: none;
+  }
+
+  .toast,
+  .xp-fill {
+    transition: none;
+  }
 }
 
 .hover-gloss {

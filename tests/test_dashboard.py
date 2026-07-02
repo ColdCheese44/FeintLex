@@ -18,9 +18,13 @@ def test_dashboard_assets_are_served(tmp_path, monkeypatch):
         js = client.get("/static/dashboard.js")
 
     assert dashboard.status_code == 200
-    assert "FeintLex" in dashboard.text
+    assert "FeintLex HQ" in dashboard.text
     assert "Source Intake" in dashboard.text
     assert "Interactive AI Coach" in dashboard.text
+    assert "hqRankName" in dashboard.text
+    assert "toastHolder" in dashboard.text
+    assert "sampleTextButton" in dashboard.text
+    assert "/progress/hq" in js.text
     assert css.status_code == 200
     assert js.status_code == 200
     assert "TUTOR_DECKS" in js.text
