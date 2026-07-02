@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from feintlex import APP_NAME, __version__
@@ -39,8 +39,14 @@ def create_app() -> FastAPI:
 
     @application.get("/")
     @application.get("/dashboard")
-    def dashboard() -> FileResponse:
-        return FileResponse(STATIC_DIR / "dashboard.html")
+    def dashboard() -> HTMLResponse:
+        # Cache-bust static assets with their modification time so the
+        # browser always picks up dashboard changes on reload.
+        html = (STATIC_DIR / "dashboard.html").read_text(encoding="utf-8")
+        stamp = int(max((STATIC_DIR / name).stat().st_mtime for name in ("dashboard.js", "dashboard.css")))
+        html = html.replace('href="/static/dashboard.css"', f'href="/static/dashboard.css?v={stamp}"')
+        html = html.replace('src="/static/dashboard.js"', f'src="/static/dashboard.js?v={stamp}"')
+        return HTMLResponse(html)
 
     application.include_router(health.router)
     application.include_router(content.router)

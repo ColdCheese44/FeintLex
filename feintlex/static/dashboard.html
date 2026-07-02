@@ -57,6 +57,7 @@
           <button class="tutor-tab" type="button" data-tutor-tab="drill">🎯 Drill</button>
           <button class="tutor-tab" type="button" data-tutor-tab="listen">📻 Listen</button>
           <button class="tutor-tab" type="button" data-tutor-tab="coach">🎙 Coach</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="library">📖 Library</button>
           <button class="tutor-tab" type="button" data-tutor-tab="status">📊 Status</button>
         </div>
 
@@ -143,6 +144,17 @@
             <textarea id="coachInput" spellcheck="false" placeholder="Ask anything: 'conjugate tener', 'ser vs estar', 'quiz me', 'correct: <tu texto>'... Enter to send."></textarea>
             <button id="sendCoachButton" class="primary-button" type="button">Send</button>
           </div>
+        </div>
+
+        <div id="tutorLibraryView" class="tutor-view" hidden>
+          <div class="library-toolbar">
+            <input id="librarySearch" type="text" spellcheck="false" placeholder="Search Spanish or English... (e.g. amenaza, threat)" />
+            <select id="libraryCategory" aria-label="Category filter">
+              <option value="all">All Categories</option>
+            </select>
+          </div>
+          <p id="libraryCount" class="list-empty">Loading the library...</p>
+          <div id="libraryList" class="library-list gloss-zone"></div>
         </div>
 
         <div id="tutorStatusView" class="tutor-view" hidden>

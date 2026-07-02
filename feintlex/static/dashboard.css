@@ -1049,6 +1049,68 @@ section[id] {
   }
 }
 
+.library-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.library-toolbar input {
+  flex: 1 1 260px;
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.library-toolbar select {
+  flex: 0 1 220px;
+  min-height: 40px;
+  padding: 0 8px;
+}
+
+.library-list {
+  display: grid;
+  gap: 6px;
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.library-row {
+  display: grid;
+  grid-template-columns: auto minmax(110px, auto) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #10120f;
+  transition: border-color 140ms ease;
+}
+
+.library-row:hover {
+  border-color: var(--border-hot);
+}
+
+.library-row strong {
+  color: var(--green);
+  font-size: 14px;
+}
+
+.library-row span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.library-row em {
+  color: var(--quiet);
+  font-size: 11px;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
 .hover-gloss {
   position: fixed;
   z-index: 1000;

@@ -777,7 +777,7 @@ function setTutorTab(tab) {
   document.querySelectorAll(".tutor-tab").forEach((button) => {
     button.classList.toggle("active", button.dataset.tutorTab === tab);
   });
-  ["decks", "study", "drill", "listen", "coach", "status"].forEach((name) => {
+  ["decks", "study", "drill", "listen", "coach", "library", "status"].forEach((name) => {
     $(`tutor${name[0].toUpperCase()}${name.slice(1)}View`).hidden = name !== tab;
   });
   if (tab === "drill" && !state.tutor.drill) {
@@ -1527,6 +1527,12 @@ function bindTutorEvents() {
   $("listenRate").addEventListener("change", () => {
     state.listen.rate = parseFloat($("listenRate").value) || 0.9;
   });
+  $("librarySearch").addEventListener("input", renderLibrary);
+  $("libraryCategory").addEventListener("change", renderLibrary);
+  $("libraryList").addEventListener("click", (event) => {
+    const speakButton = event.target.closest(".chat-speak");
+    if (speakButton) speakSpanish(speakButton.dataset.speak);
+  });
   $("sendCoachButton").addEventListener("click", () => sendCoach());
   $("clearCoachButton").addEventListener("click", clearCoachHistory);
   $("coachInput").addEventListener("keydown", (event) => {
@@ -1617,14 +1623,42 @@ function showToast(message, tone = "info", duration = 2600) {
 
 // --- Hover gloss dictionary --------------------------------------------------
 
-const hoverLexicon = { terms: {}, phrases: {}, loaded: false };
+const hoverLexicon = { terms: {}, phrases: {}, derived: {}, categories: {}, stats: null, loaded: false };
 const WORD_CHAR = /[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/;
+
+const CATEGORY_LABELS = {
+  function_words: "Function Words",
+  pronouns: "Pronouns",
+  verbs: "Verbs",
+  verb_forms: "Verb Forms",
+  people_family: "People & Family",
+  home_objects: "Home & Objects",
+  city_travel: "City & Travel",
+  food_drink: "Food & Drink",
+  body_health: "Body & Health",
+  work_school: "Work & School",
+  technology_cyber: "Technology & Cyber",
+  soccer_sports: "Soccer & Sports",
+  news_politics: "News & Politics",
+  crime_investigation: "Crime & Investigation",
+  nature_weather: "Nature & Weather",
+  time_calendar: "Time & Calendar",
+  numbers: "Numbers",
+  adjectives: "Adjectives",
+  adverbs_quantity: "Adverbs & Quantity",
+  conversation: "Conversation",
+  abstract: "Abstract & Culture",
+  phrases: "Phrases & Idioms",
+};
 
 async function loadLexicon() {
   try {
     const payload = await api("/lexicon");
     hoverLexicon.terms = payload.terms || {};
     hoverLexicon.phrases = payload.phrases || {};
+    hoverLexicon.derived = payload.derived || {};
+    hoverLexicon.categories = payload.categories || {};
+    hoverLexicon.stats = payload.stats || null;
     // Deck terms join the dictionary: multi-word entries act as phrases.
     TUTOR_ALL_TERMS.forEach((term) => {
       const normalized = normalizeSpanish(term.es);
@@ -1638,6 +1672,9 @@ async function loadLexicon() {
       }
     });
     hoverLexicon.loaded = true;
+    buildLibraryIndex();
+    renderLibraryCategories();
+    renderLibrary();
   } catch {
     // Hover gloss is a progressive enhancement.
   }
@@ -1686,6 +1723,20 @@ function wordAtPoint(x, y) {
   };
 }
 
+function lookupWord(word) {
+  // Mirrors the server fallback chain: exact -> plural -> feminine -> derived.
+  const terms = hoverLexicon.terms;
+  if (terms[word]) return terms[word];
+  if (word.length > 4 && word.endsWith("es") && terms[word.slice(0, -2)]) return terms[word.slice(0, -2)];
+  if (word.length > 3 && word.endsWith("s") && terms[word.slice(0, -1)]) return terms[word.slice(0, -1)];
+  if (word.length > 3 && word.endsWith("a") && terms[`${word.slice(0, -1)}o`]) return terms[`${word.slice(0, -1)}o`];
+  if (word.length > 4 && word.endsWith("as") && terms[`${word.slice(0, -2)}o`]) return terms[`${word.slice(0, -2)}o`];
+  const derived = hoverLexicon.derived;
+  if (derived[word]) return derived[word];
+  if (word.length > 3 && word.endsWith("s") && derived[word.slice(0, -1)]) return derived[word.slice(0, -1)];
+  return null;
+}
+
 function glossFor(hit) {
   const word = normalizeSpanish(hit.word);
   if (!word) return null;
@@ -1698,10 +1749,71 @@ function glossFor(hit) {
   if (prev && hoverLexicon.phrases[`${prev} ${word}`]) {
     return { term: `${hit.prev} ${hit.word}`, gloss: hoverLexicon.phrases[`${prev} ${word}`] };
   }
-  if (hoverLexicon.terms[word]) {
-    return { term: hit.word, gloss: hoverLexicon.terms[word] };
-  }
-  return null;
+  const gloss = lookupWord(word);
+  return gloss ? { term: hit.word, gloss } : null;
+}
+
+// --- Library tab ---------------------------------------------------------
+
+const libraryIndex = [];
+
+function buildLibraryIndex() {
+  libraryIndex.length = 0;
+  const seen = new Set();
+  Object.entries(hoverLexicon.categories).forEach(([category, terms]) => {
+    terms.forEach((term) => {
+      const gloss = hoverLexicon.terms[term];
+      if (!gloss || seen.has(term)) return;
+      seen.add(term);
+      libraryIndex.push({ term, gloss, category });
+    });
+  });
+  Object.entries(hoverLexicon.phrases).forEach(([term, gloss]) => {
+    if (seen.has(term)) return;
+    seen.add(term);
+    libraryIndex.push({ term, gloss, category: "phrases" });
+  });
+  libraryIndex.sort((a, b) => a.term.localeCompare(b.term));
+}
+
+function renderLibraryCategories() {
+  const select = $("libraryCategory");
+  const options = ['<option value="all">All Categories</option>'];
+  Object.keys(hoverLexicon.categories).forEach((category) => {
+    options.push(`<option value="${escapeHtml(category)}">${escapeHtml(CATEGORY_LABELS[category] || category)}</option>`);
+  });
+  options.push('<option value="phrases">Phrases & Idioms</option>');
+  select.innerHTML = options.join("");
+}
+
+function renderLibrary() {
+  const query = normalizeSpanish($("librarySearch").value);
+  const category = $("libraryCategory").value;
+  const matches = libraryIndex.filter((entry) => {
+    if (category !== "all" && entry.category !== category) return false;
+    if (!query) return true;
+    return entry.term.includes(query) || entry.gloss.toLowerCase().includes(query);
+  });
+
+  const shown = matches.slice(0, 200);
+  const stats = hoverLexicon.stats;
+  const statsLine = stats
+    ? ` · Library holds ${stats.terms} terms, ${stats.phrases} phrases, and ${stats.derived_forms} conjugated forms`
+    : "";
+  $("libraryCount").textContent = `${matches.length} match(es), showing ${shown.length}${statsLine}.`;
+
+  $("libraryList").innerHTML = shown
+    .map(
+      (entry) => `
+        <div class="library-row">
+          <button class="chat-speak" type="button" data-speak="${escapeHtml(entry.term)}">🔊</button>
+          <strong>${escapeHtml(entry.term)}</strong>
+          <span>${escapeHtml(entry.gloss)}</span>
+          <em>${escapeHtml(CATEGORY_LABELS[entry.category] || entry.category)}</em>
+        </div>
+      `,
+    )
+    .join("") || '<p class="list-empty">No matches. Try a shorter search.</p>';
 }
 
 function hideHoverGloss() {

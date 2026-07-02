@@ -19,6 +19,33 @@ def test_lexicon_lookup_handles_accents_and_phrases():
     assert lookup("palabrainventada") is None
 
 
+def test_library_scale_and_categories():
+    from feintlex.services.lexicon import CATEGORIES, LEXICON, PHRASES, library_stats
+
+    assert len(LEXICON) >= 1000, "the library should hold 1000+ curated terms"
+    assert len(PHRASES) >= 120, "the library should hold 120+ phrases"
+    assert len(CATEGORIES) >= 15
+    stats = library_stats()
+    assert stats["derived_forms"] >= 3000, "derived conjugations should cover thousands of forms"
+
+
+def test_derived_verb_form_lookup():
+    assert "to analyze" in lookup("analizaron")
+    assert "preterite" in lookup("analizaron")
+    assert "to speak" in lookup("hablaremos")
+    assert "future" in lookup("hablaremos")
+
+
+def test_fallback_chain_prefers_curated_over_derived():
+    # 'amenazas' is both a plural noun and a verb form; the noun wins.
+    assert lookup("amenazas") == "threat"
+    # Feminine adjective falls back to the masculine entry.
+    assert lookup("nueva") == "new"
+    assert lookup("cansadas") == "tired"
+    # Plural of a curated noun.
+    assert lookup("ciudades") == "city"
+
+
 def test_lexicon_reverse_lookup_finds_spanish():
     matches = reverse_lookup("threat")
     assert any(item["es"] == "amenaza" for item in matches)
@@ -167,6 +194,11 @@ def test_lexicon_route_serves_hover_dictionary(tmp_path, monkeypatch):
         assert payload["phrases"]["por favor"] == "please"
         # Keys must be normalized (lowercase, accent-free) for frontend lookup.
         assert all(key == key.lower() for key in payload["terms"])
+        # Library payload: derived forms, categories, and stats.
+        assert "to analyze" in payload["derived"]["analizaron"]
+        assert "verbs" in payload["categories"]
+        assert "amenaza" in payload["categories"]["technology_cyber"]
+        assert payload["stats"]["terms"] >= 1000
     clear_engine_cache()
 
 

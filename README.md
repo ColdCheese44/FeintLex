@@ -142,6 +142,7 @@ The Coach tab is a real conversational tutor that runs fully offline:
 - **Intel Report** (Status tab): live training stats from `GET /progress/summary` — lessons, vocabulary, writing runs, chat volume, due reviews, and locked signals.
 - Autopsy and writing panels render structured result cards (with literal word-by-word glosses and green corrections) instead of raw JSON.
 - **Hover dictionary**: mouse over any Spanish word in the lesson, autopsy, writing, chat, or vocabulary panels and a popup next to the pointer shows the English translation (offline lexicon via `GET /lexicon`, phrase-aware — "por favor", "sin embargo"). Deliberately disabled on drill and quiz options so answers never leak.
+- **The Library** (📖 tab): a browsable, searchable offline glossary — **1,500+ curated terms across 21 themed categories** (function words through cybersecurity, soccer, news, and investigation), **175+ phrases and idioms**, and **7,000+ auto-derived conjugated verb forms** generated from the conjugation engine, so hovering "analizaron" resolves to "to analyze [analizar · preterite]". Search in Spanish or English, filter by category, and hear any entry spoken. Lookups fall back intelligently: exact → plural → feminine → conjugated form.
 
 Chat API:
 

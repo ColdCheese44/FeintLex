@@ -37,6 +37,9 @@ def test_dashboard_assets_are_served(tmp_path, monkeypatch):
     assert "/lexicon" in js.text
     assert "hoverGloss" in dashboard.text
     assert "gloss-zone" in dashboard.text
+    assert "tutorLibraryView" in dashboard.text
+    assert "librarySearch" in dashboard.text
+    assert "buildLibraryIndex" in js.text
     clear_engine_cache()
 
 
