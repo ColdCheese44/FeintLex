@@ -6,6 +6,7 @@ import re
 from sqlmodel import Session
 
 from feintlex.models import ContentItem, Lesson, ReviewItem
+from feintlex.services.lexicon import gloss_tokens
 from feintlex.services.quiz_generator import generate_quiz
 from feintlex.services.vocabulary import extract_vocabulary, upsert_vocabulary_entries
 
@@ -31,10 +32,14 @@ def make_title(content: ContentItem, sentences: list[str]) -> str:
 def summarize_english(sentences: list[str]) -> str:
     if not sentences:
         return "Rule-based summary unavailable because no sentence was detected."
-    return (
-        "Rule-based MVP summary: review the opening sentence, identify the main actors, "
-        "and confirm the core action before refining with AI."
-    )
+    words = []
+    for item in gloss_tokens(sentences[0]):
+        if item["en"] == "?":
+            words.append(f"[{item['es']}]")
+        else:
+            words.append(item["en"].split("/")[0].split("(")[0].strip())
+    gloss = " ".join(words)
+    return f"Opening sentence gloss: {gloss}. Identify the main actors and confirm the core action, then run sentence autopsy."
 
 
 def summarize_spanish(sentences: list[str]) -> str:
@@ -53,8 +58,8 @@ def detect_grammar_points(text: str) -> list[str]:
     if any(word.endswith(("aba", "aban", "ia", "ian")) for word in re.findall(r"\w+", lowered)):
         points.append("Possible imperfect tense markers appear; verify in sentence autopsy.")
     if not points:
-        points.append("MVP grammar scan: identify verbs, connectors, and noun-adjective agreement manually.")
-    points.append("TODO: enrich grammar mapping with LLM-assisted explanations.")
+        points.append("Grammar scan: identify verbs, connectors, and noun-adjective agreement manually.")
+    points.append("Run sentence autopsy on a candidate below for the full verb/connector breakdown.")
     return points
 
 

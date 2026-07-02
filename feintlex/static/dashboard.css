@@ -827,6 +827,30 @@ textarea {
   font-size: 12px;
 }
 
+.hover-gloss {
+  position: fixed;
+  z-index: 1000;
+  max-width: 280px;
+  padding: 7px 11px;
+  border: 1px solid var(--border-hot);
+  border-radius: 6px;
+  background: var(--black);
+  box-shadow: 0 6px 18px var(--shadow);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.hover-gloss strong {
+  margin-right: 6px;
+  color: var(--amber);
+}
+
+.gloss-zone {
+  cursor: help;
+}
+
 .coach-quick-actions button {
   flex: 1 1 110px;
 }

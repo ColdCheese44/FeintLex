@@ -264,7 +264,7 @@ function renderLesson(lesson) {
   $("exportLessonButton").disabled = !lesson?.id;
 
   if (!lesson) {
-    $("lessonOutput").className = "lesson-output empty-state";
+    $("lessonOutput").className = "lesson-output empty-state gloss-zone";
     $("lessonOutput").innerHTML = "<h3>No lesson loaded</h3><p>Paste Spanish source text to generate the first drill.</p>";
     return;
   }
@@ -282,7 +282,7 @@ function renderLesson(lesson) {
     )
     .join("");
 
-  $("lessonOutput").className = "lesson-output";
+  $("lessonOutput").className = "lesson-output gloss-zone";
   $("lessonOutput").innerHTML = `
     <div class="lesson-grid">
       <div class="metric-row">
@@ -1496,6 +1496,129 @@ function bindTutorEvents() {
   });
 }
 
+// --- Hover gloss dictionary --------------------------------------------------
+
+const hoverLexicon = { terms: {}, phrases: {}, loaded: false };
+const WORD_CHAR = /[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/;
+
+async function loadLexicon() {
+  try {
+    const payload = await api("/lexicon");
+    hoverLexicon.terms = payload.terms || {};
+    hoverLexicon.phrases = payload.phrases || {};
+    // Deck terms join the dictionary: multi-word entries act as phrases.
+    TUTOR_ALL_TERMS.forEach((term) => {
+      const normalized = normalizeSpanish(term.es);
+      if (!normalized) return;
+      const bucket = normalized.includes(" ") ? hoverLexicon.phrases : hoverLexicon.terms;
+      if (!bucket[normalized]) bucket[normalized] = term.en;
+      // "el agua" should also gloss when hovering just "agua".
+      const stripped = normalized.replace(/^(el|la|los|las) /, "");
+      if (stripped !== normalized && !stripped.includes(" ") && !hoverLexicon.terms[stripped]) {
+        hoverLexicon.terms[stripped] = term.en;
+      }
+    });
+    hoverLexicon.loaded = true;
+  } catch {
+    // Hover gloss is a progressive enhancement.
+  }
+}
+
+function wordAtPoint(x, y) {
+  let node = null;
+  let offset = 0;
+  if (document.caretPositionFromPoint) {
+    const position = document.caretPositionFromPoint(x, y);
+    if (!position) return null;
+    node = position.offsetNode;
+    offset = position.offset;
+  } else if (document.caretRangeFromPoint) {
+    const range = document.caretRangeFromPoint(x, y);
+    if (!range) return null;
+    node = range.startContainer;
+    offset = range.startOffset;
+  }
+  if (!node || node.nodeType !== Node.TEXT_NODE) return null;
+
+  const text = node.textContent;
+  let index = offset;
+  if (index >= text.length || !WORD_CHAR.test(text[index])) {
+    if (index > 0 && WORD_CHAR.test(text[index - 1])) index -= 1;
+    else return null;
+  }
+  let start = index;
+  let end = index + 1;
+  while (start > 0 && WORD_CHAR.test(text[start - 1])) start -= 1;
+  while (end < text.length && WORD_CHAR.test(text[end])) end += 1;
+
+  // Confirm the pointer is actually over the word, not empty line space.
+  const wordRange = document.createRange();
+  wordRange.setStart(node, start);
+  wordRange.setEnd(node, end);
+  const rect = wordRange.getBoundingClientRect();
+  if (x < rect.left - 2 || x > rect.right + 2 || y < rect.top - 2 || y > rect.bottom + 2) return null;
+
+  const before = text.slice(0, start).match(/([A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]*$/);
+  const after = text.slice(end).match(/^[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]*([A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)/);
+  return {
+    word: text.slice(start, end),
+    prev: before ? before[1] : null,
+    next: after ? after[1] : null,
+  };
+}
+
+function glossFor(hit) {
+  const word = normalizeSpanish(hit.word);
+  if (!word) return null;
+  const prev = hit.prev ? normalizeSpanish(hit.prev) : null;
+  const next = hit.next ? normalizeSpanish(hit.next) : null;
+  // Phrases outrank single words: "por favor", "sin embargo", "el agua".
+  if (next && hoverLexicon.phrases[`${word} ${next}`]) {
+    return { term: `${hit.word} ${hit.next}`, gloss: hoverLexicon.phrases[`${word} ${next}`] };
+  }
+  if (prev && hoverLexicon.phrases[`${prev} ${word}`]) {
+    return { term: `${hit.prev} ${hit.word}`, gloss: hoverLexicon.phrases[`${prev} ${word}`] };
+  }
+  if (hoverLexicon.terms[word]) {
+    return { term: hit.word, gloss: hoverLexicon.terms[word] };
+  }
+  return null;
+}
+
+function hideHoverGloss() {
+  const tip = $("hoverGloss");
+  if (!tip.hidden) tip.hidden = true;
+}
+
+function handleGlossHover(event) {
+  if (!hoverLexicon.loaded) return;
+  const zone = event.target.closest(".gloss-zone");
+  // Never gloss quiz/drill answer options — that would leak answers.
+  if (!zone || event.target.closest(".option-button")) {
+    hideHoverGloss();
+    return;
+  }
+  const hit = wordAtPoint(event.clientX, event.clientY);
+  const found = hit ? glossFor(hit) : null;
+  if (!found) {
+    hideHoverGloss();
+    return;
+  }
+
+  const tip = $("hoverGloss");
+  tip.innerHTML = `<strong>${escapeHtml(found.term.toLowerCase())}</strong> ${escapeHtml(found.gloss)}`;
+  tip.hidden = false;
+  const pad = 14;
+  const width = tip.offsetWidth;
+  const height = tip.offsetHeight;
+  let left = event.clientX + pad;
+  let top = event.clientY + pad + 4;
+  if (left + width > window.innerWidth - 8) left = event.clientX - width - pad;
+  if (top + height > window.innerHeight - 8) top = event.clientY - height - pad;
+  tip.style.left = `${Math.max(4, left)}px`;
+  tip.style.top = `${Math.max(4, top)}px`;
+}
+
 function bindEvents() {
   $("generateLessonButton").addEventListener("click", importAndGenerate);
   $("clearButton").addEventListener("click", clearIntake);
@@ -1512,10 +1635,14 @@ function bindEvents() {
   $("submitWritingButton").addEventListener("click", submitWriting);
   $("autopsyOutput").addEventListener("click", handleCoachClick);
   $("writingOutput").addEventListener("click", handleCoachClick);
+  document.addEventListener("mousemove", handleGlossHover);
+  document.addEventListener("scroll", hideHoverGloss, true);
+  document.addEventListener("mouseleave", hideHoverGloss);
   $("exportLessonButton").addEventListener("click", exportLesson);
   bindTutorEvents();
 }
 
 bindEvents();
 initializeTutor();
+loadLexicon();
 refreshDashboard().catch((error) => setStatus(error.message, true));

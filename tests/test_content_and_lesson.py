@@ -26,7 +26,7 @@ def test_lesson_generation_fallback_creates_structured_lesson(isolated_session):
 
     assert lesson.id is not None
     assert lesson.title == "Cybersecurity Reading Drill"
-    assert lesson.english_summary.startswith("Rule-based MVP summary")
+    assert lesson.english_summary.startswith("Opening sentence gloss:")
     assert lesson.key_vocabulary
     assert lesson.grammar_points
     assert lesson.sentence_breakdown_candidates

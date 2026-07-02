@@ -160,6 +160,16 @@ def _client(tmp_path, monkeypatch, name):
     return TestClient(create_app())
 
 
+def test_lexicon_route_serves_hover_dictionary(tmp_path, monkeypatch):
+    with _client(tmp_path, monkeypatch, "lexicon-route") as client:
+        payload = client.get("/lexicon").json()
+        assert payload["terms"]["amenaza"] == "threat"
+        assert payload["phrases"]["por favor"] == "please"
+        # Keys must be normalized (lowercase, accent-free) for frontend lookup.
+        assert all(key == key.lower() for key in payload["terms"])
+    clear_engine_cache()
+
+
 def test_chat_route_round_trip(tmp_path, monkeypatch):
     with _client(tmp_path, monkeypatch, "chat-route") as client:
         response = client.post("/tutor/chat", json={"message": "conjugate hablar"})

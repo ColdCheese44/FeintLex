@@ -110,7 +110,7 @@
         </div>
 
         <div id="tutorCoachView" class="tutor-view" hidden>
-          <div id="coachMessages" class="coach-messages" aria-live="polite"></div>
+          <div id="coachMessages" class="coach-messages gloss-zone" aria-live="polite"></div>
           <div id="coachSuggestions" class="coach-suggestions" aria-label="Suggested follow-ups"></div>
           <div class="coach-quick-actions">
             <button type="button" data-coach-action="explain">Explain</button>
@@ -182,7 +182,7 @@
           <button id="exportLessonButton" type="button" disabled>Export MD</button>
         </div>
 
-        <article id="lessonOutput" class="lesson-output empty-state">
+        <article id="lessonOutput" class="lesson-output empty-state gloss-zone">
           <h3>No lesson loaded</h3>
           <p>Paste Spanish source text to generate the first drill.</p>
         </article>
@@ -218,7 +218,7 @@
               <h2 id="vocabTitle">Vocabulary Watchlist</h2>
             </div>
           </div>
-          <div id="vocabList" class="chip-field"></div>
+          <div id="vocabList" class="chip-field gloss-zone"></div>
         </section>
 
         <section class="panel compact-panel" aria-labelledby="reviewTitle">
@@ -242,7 +242,7 @@
           <button id="runAutopsyButton" type="button">Analyze</button>
         </div>
         <textarea id="autopsyInput" spellcheck="false" placeholder="Selecciona o pega una frase..."></textarea>
-        <div id="autopsyOutput" class="structured-output"></div>
+        <div id="autopsyOutput" class="structured-output gloss-zone"></div>
       </section>
 
       <section class="panel writing-panel" aria-labelledby="writingTitle">
@@ -254,9 +254,11 @@
           <button id="submitWritingButton" type="button">Submit</button>
         </div>
         <textarea id="writingInput" spellcheck="false" placeholder="Escribe tu respuesta en espanol..."></textarea>
-        <div id="writingOutput" class="structured-output"></div>
+        <div id="writingOutput" class="structured-output gloss-zone"></div>
       </section>
     </main>
+
+    <div id="hoverGloss" class="hover-gloss" hidden aria-hidden="true"></div>
 
     <script src="/static/dashboard.js"></script>
   </body>

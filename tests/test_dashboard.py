@@ -30,6 +30,9 @@ def test_dashboard_assets_are_served(tmp_path, monkeypatch):
     assert "/progress/summary" in js.text
     assert "tutorListenView" in dashboard.text
     assert "Signal Queue" in dashboard.text
+    assert "/lexicon" in js.text
+    assert "hoverGloss" in dashboard.text
+    assert "gloss-zone" in dashboard.text
     clear_engine_cache()
 
 

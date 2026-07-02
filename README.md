@@ -139,6 +139,7 @@ The Coach tab is a real conversational tutor that runs fully offline:
 - **Listen tab**: browser speech-synthesis listening drills weighted toward weak terms. Meaning mode (hear Spanish, choose the English) and Dictation mode (type what you hear — accent- and punctuation-insensitive matching). Adjustable speed: 0.7x / 0.9x / 1.1x.
 - **Intel Report** (Status tab): live training stats from `GET /progress/summary` — lessons, vocabulary, writing runs, chat volume, due reviews, and locked signals.
 - Autopsy and writing panels render structured result cards (with literal word-by-word glosses and green corrections) instead of raw JSON.
+- **Hover dictionary**: mouse over any Spanish word in the lesson, autopsy, writing, chat, or vocabulary panels and a popup next to the pointer shows the English translation (offline lexicon via `GET /lexicon`, phrase-aware — "por favor", "sin embargo"). Deliberately disabled on drill and quiz options so answers never leak.
 
 Chat API:
 
