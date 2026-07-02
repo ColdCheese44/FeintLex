@@ -765,6 +765,68 @@ textarea {
   padding: 0 12px;
 }
 
+.protocol-focus {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.protocol-progress {
+  margin: 6px 0 0;
+  color: var(--quiet);
+  font-size: 12px;
+}
+
+.mission-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.mission {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #10120f;
+  line-height: 1.4;
+}
+
+.mission.done {
+  border-color: var(--green);
+  background: rgba(90, 191, 122, 0.07);
+}
+
+.mission.done strong,
+.mission.done .mission-detail {
+  color: var(--quiet);
+  text-decoration: line-through;
+}
+
+.mission-check {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  min-height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--green);
+  font-size: 13px;
+}
+
+.mission strong {
+  display: block;
+  font-size: 13px;
+}
+
+.mission-detail {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .coach-quick-actions button {
   flex: 1 1 110px;
 }

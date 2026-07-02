@@ -8,6 +8,8 @@ Core loop:
 Immersion -> Sentence Autopsy -> Practice -> Correction -> Reinforcement
 ```
 
+**Training program:** see [PROGRAM.md](PROGRAM.md) — a research-backed, reading/writing-first Spanish protocol (Nation's four strands, frequency-first vocabulary, extensive reading, direct written corrective feedback, spaced retrieval). The dashboard's **Daily Missions** panel tracks the protocol live via `GET /program/today`, and the Core Signal decks (07-10) carry the top-frequency vocabulary the program prescribes.
+
 This first pass is intentionally boring and stable: SQLite, deterministic rule-based fallbacks, human-readable exports, structured logs, and no required paid AI APIs.
 
 ## MVP Goal

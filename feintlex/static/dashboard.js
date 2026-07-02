@@ -133,6 +133,78 @@ const TUTOR_DECKS = [
       { es: "entender", en: "to understand", note: "entiendo / entiendes / entiende", xes: "No entiendo.", xen: "I do not understand." },
     ],
   },
+  {
+    id: "core1",
+    tag: "07",
+    name: "Core Signal I",
+    sub: "Top-frequency verbs and nouns",
+    terms: [
+      { es: "decir", en: "to say / tell", note: "digo / dices / dice", xes: "El testigo dice la verdad.", xen: "The witness tells the truth." },
+      { es: "saber", en: "to know (facts)", note: "sé / sabes / sabe", xes: "No sé la respuesta.", xen: "I do not know the answer." },
+      { es: "ver", en: "to see", note: "veo / ves / ve", xes: "Veo el problema.", xen: "I see the problem." },
+      { es: "dar", en: "to give", note: "doy / das / da", xes: "Dame un ejemplo.", xen: "Give me an example." },
+      { es: "la vida", en: "life", note: "", xes: "La vida es corta.", xen: "Life is short." },
+      { es: "el tiempo", en: "time / weather", note: "Context decides.", xes: "No tengo tiempo.", xen: "I do not have time." },
+      { es: "la cosa", en: "thing", note: "", xes: "Es una cosa importante.", xen: "It is an important thing." },
+      { es: "el mundo", en: "world", note: "", xes: "Todo el mundo lo sabe.", xen: "Everybody knows it." },
+      { es: "la gente", en: "people", note: "Singular in Spanish.", xes: "La gente habla mucho.", xen: "People talk a lot." },
+      { es: "el trabajo", en: "work / job", note: "", xes: "El trabajo es dificil.", xen: "The work is difficult." },
+    ],
+  },
+  {
+    id: "core2",
+    tag: "08",
+    name: "Core Signal II",
+    sub: "High-frequency operating verbs",
+    terms: [
+      { es: "pensar", en: "to think", note: "pienso / piensas / piensa", xes: "Pienso en el caso.", xen: "I think about the case." },
+      { es: "creer", en: "to believe", note: "creo / crees / cree", xes: "Creo que es verdad.", xen: "I believe it is true." },
+      { es: "hablar", en: "to speak", note: "hablo / hablas / habla", xes: "Hablamos con el analista.", xen: "We speak with the analyst." },
+      { es: "encontrar", en: "to find", note: "encuentro / encuentras", xes: "Encontramos la evidencia.", xen: "We found the evidence." },
+      { es: "dejar", en: "to leave / let", note: "", xes: "Deja el archivo aqui.", xen: "Leave the file here." },
+      { es: "seguir", en: "to follow / continue", note: "sigo / sigues / sigue", xes: "Sigue la pista.", xen: "Follow the clue." },
+      { es: "llevar", en: "to carry / take", note: "", xes: "Llevo el informe.", xen: "I carry the report." },
+      { es: "la parte", en: "part", note: "", xes: "Es parte del plan.", xen: "It is part of the plan." },
+      { es: "el lugar", en: "place", note: "", xes: "Es un lugar seguro.", xen: "It is a safe place." },
+      { es: "la palabra", en: "word", note: "", xes: "Una palabra nueva cada dia.", xen: "One new word every day." },
+    ],
+  },
+  {
+    id: "core3",
+    tag: "09",
+    name: "Core Signal III",
+    sub: "Describers and quantity words",
+    terms: [
+      { es: "nuevo", en: "new", note: "nuevo / nueva", xes: "Hay un mensaje nuevo.", xen: "There is a new message." },
+      { es: "grande", en: "big / great", note: "", xes: "Es un riesgo grande.", xen: "It is a big risk." },
+      { es: "importante", en: "important", note: "", xes: "La fuente es importante.", xen: "The source is important." },
+      { es: "mejor", en: "better / best", note: "", xes: "Es la mejor opcion.", xen: "It is the best option." },
+      { es: "siempre", en: "always", note: "", xes: "Siempre revisa los datos.", xen: "Always check the data." },
+      { es: "nunca", en: "never", note: "", xes: "Nunca abras ese correo.", xen: "Never open that email." },
+      { es: "todo", en: "all / everything", note: "todo / toda / todos", xes: "Todo esta bajo control.", xen: "Everything is under control." },
+      { es: "nada", en: "nothing", note: "Double negative is correct.", xes: "No veo nada raro.", xen: "I see nothing strange." },
+      { es: "algo", en: "something", note: "", xes: "Algo no funciona.", xen: "Something does not work." },
+      { es: "alguien", en: "someone", note: "", xes: "Alguien entro al sistema.", xen: "Someone entered the system." },
+    ],
+  },
+  {
+    id: "operators",
+    tag: "10",
+    name: "Operators",
+    sub: "Connectors that reveal sentence logic",
+    terms: [
+      { es: "porque", en: "because", note: "Cause.", xes: "Fallo porque nadie reviso el codigo.", xen: "It failed because nobody reviewed the code." },
+      { es: "pero", en: "but", note: "Contrast.", xes: "Es dificil pero posible.", xen: "It is difficult but possible." },
+      { es: "aunque", en: "although", note: "Concession.", xes: "Aunque llueve, jugamos.", xen: "Although it rains, we play." },
+      { es: "mientras", en: "while", note: "Time / contrast.", xes: "Mientras leo, tomo notas.", xen: "While I read, I take notes." },
+      { es: "sin embargo", en: "however", note: "Formal contrast.", xes: "Sin embargo, el riesgo continua.", xen: "However, the risk continues." },
+      { es: "ademas", en: "besides / in addition", note: "Addition.", xes: "Ademas, hay otra alerta.", xen: "In addition, there is another alert." },
+      { es: "entonces", en: "then / so", note: "Sequence / result.", xes: "Entonces, cual es el plan?", xen: "So, what is the plan?" },
+      { es: "por eso", en: "that's why", note: "Result.", xes: "Por eso estudio cada dia.", xen: "That is why I study every day." },
+      { es: "ya que", en: "since / given that", note: "Cause (formal).", xes: "Ya que estas aqui, ayudame.", xen: "Since you are here, help me." },
+      { es: "asi que", en: "so / therefore", note: "Result (informal).", xes: "Asi que decidimos esperar.", xen: "So we decided to wait." },
+    ],
+  },
 ];
 
 TUTOR_DECKS.forEach((deck) => deck.terms.forEach((term, index) => (term.id = `${deck.id}:${index}`)));
@@ -371,12 +443,44 @@ async function refreshReviewQueue() {
   renderReviewQueue();
 }
 
+function renderProtocol(program) {
+  state.program = program;
+  $("protocolPhase").textContent = `Phase ${program.phase}: ${program.name}`;
+  const nextLine = program.next_threshold
+    ? `${program.known_signals} / ${program.next_threshold} known signals to next phase`
+    : `${program.known_signals} known signals — final phase`;
+  $("protocolPanel").innerHTML = `
+    <p class="protocol-focus">${escapeHtml(program.focus)}</p>
+    <div class="progress-track"><div class="progress-fill" style="width:${
+      program.next_threshold ? Math.min(100, Math.round((program.known_signals / program.next_threshold) * 100)) : 100
+    }%"></div></div>
+    <p class="protocol-progress">${escapeHtml(nextLine)}</p>
+    <ul class="mission-list">
+      ${program.missions
+        .map(
+          (mission) => `
+            <li class="mission ${mission.done ? "done" : ""}">
+              <span class="mission-check">${mission.done ? "✓" : mission.manual ? "·" : "○"}</span>
+              <div>
+                <strong>${escapeHtml(mission.title)}</strong>
+                <span class="mission-detail">${escapeHtml(mission.detail)} — ${escapeHtml(mission.minutes)} min</span>
+              </div>
+            </li>
+          `,
+        )
+        .join("")}
+    </ul>
+    <p class="protocol-progress">${program.completed}/${program.total} missions · ${program.protocol_minutes} min protocol · see PROGRAM.md</p>
+  `;
+}
+
 async function refreshDashboard() {
-  const [health, lessons, vocabulary, reviewQueue] = await Promise.all([
+  const [health, lessons, vocabulary, reviewQueue, program] = await Promise.all([
     api("/health"),
     api("/lessons?limit=12"),
     api("/vocabulary"),
     api("/review/queue?limit=30"),
+    api("/program/today"),
   ]);
   renderHealth(health);
   state.latestLessons = lessons;
@@ -387,6 +491,7 @@ async function refreshDashboard() {
   renderLessonList();
   renderVocabulary();
   renderReviewQueue();
+  renderProtocol(program);
   if (!state.activeLesson && lessons.length) {
     await loadLesson(lessons[0].id);
   }

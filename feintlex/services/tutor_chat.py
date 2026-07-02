@@ -662,16 +662,32 @@ def sync_mastery(session: Session, items: list[dict[str, object]]) -> list[Tutor
                 seen=seen,
                 correct=correct,
             )
+            session.add(row)
         else:
-            row.level = max(row.level, level) if bool(item.get("merge", False)) else level
-            row.seen = max(row.seen, seen)
-            row.correct = max(row.correct, correct)
-            if item.get("term"):
-                row.term = str(item["term"])
-            if item.get("translation"):
-                row.translation = str(item["translation"])
+            new_level = max(row.level, level) if bool(item.get("merge", False)) else level
+            new_seen = max(row.seen, seen)
+            new_correct = max(row.correct, correct)
+            new_term = str(item["term"]) if item.get("term") else row.term
+            new_translation = str(item["translation"]) if item.get("translation") else row.translation
+            changed = (
+                new_level != row.level
+                or new_seen != row.seen
+                or new_correct != row.correct
+                or new_term != row.term
+                or new_translation != row.translation
+            )
+            # Skip no-op writes so updated_at stays meaningful: the dashboard
+            # pushes a full snapshot on every load, and untouched rows must
+            # not count as today's drill activity.
+            if not changed:
+                continue
+            row.level = new_level
+            row.seen = new_seen
+            row.correct = new_correct
+            row.term = new_term
+            row.translation = new_translation
             row.updated_at = utc_now()
-        session.add(row)
+            session.add(row)
     session.commit()
     return get_all_mastery(session)
 
