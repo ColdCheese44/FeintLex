@@ -26,6 +26,10 @@ def test_dashboard_assets_are_served(tmp_path, monkeypatch):
     assert "TUTOR_DECKS" in js.text
     assert "/tutor/chat" in js.text
     assert "/tutor/mastery" in js.text
+    assert "/review/queue" in js.text
+    assert "/progress/summary" in js.text
+    assert "tutorListenView" in dashboard.text
+    assert "Signal Queue" in dashboard.text
     clear_engine_cache()
 
 

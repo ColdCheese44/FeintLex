@@ -228,7 +228,7 @@ def submit_writing(
         submitted_text=analysis["submitted_text"],
         corrected_version=analysis["corrected_version"],
         strengths=analysis["strengths"],
-        issues=[f"{issue['original']} -> {issue['correction']} ({issue['explanation']})" for issue in analysis["issues"]],
+        issues=analysis["issues"],
         grammar_notes=analysis["grammar_notes"],
         rewrite_prompt=analysis["rewrite_prompt"],
         related_lesson_id=related_lesson_id,

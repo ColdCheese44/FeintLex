@@ -37,6 +37,7 @@
           <button class="tutor-tab active" type="button" data-tutor-tab="decks">Decks</button>
           <button class="tutor-tab" type="button" data-tutor-tab="study">Study</button>
           <button class="tutor-tab" type="button" data-tutor-tab="drill">Drill</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="listen">Listen</button>
           <button class="tutor-tab" type="button" data-tutor-tab="coach">Coach</button>
           <button class="tutor-tab" type="button" data-tutor-tab="status">Status</button>
         </div>
@@ -87,6 +88,27 @@
           <div id="drillCard" class="drill-card"></div>
         </div>
 
+        <div id="tutorListenView" class="tutor-view" hidden>
+          <div class="drill-toolbar">
+            <select id="listenMode" aria-label="Listening mode">
+              <option value="meaning">Meaning (choose English)</option>
+              <option value="dictation">Dictation (type what you hear)</option>
+            </select>
+            <select id="listenRate" aria-label="Speech speed">
+              <option value="0.7">Slow 0.7x</option>
+              <option value="0.9" selected>Normal 0.9x</option>
+              <option value="1.1">Fast 1.1x</option>
+            </select>
+            <div class="score-line">
+              <span id="listenHits">Hits 0/0</span>
+              <span id="listenStreak">Streak 0</span>
+            </div>
+          </div>
+          <div id="listenCard" class="drill-card">
+            <p class="list-empty">Press Play to receive the transmission.</p>
+          </div>
+        </div>
+
         <div id="tutorCoachView" class="tutor-view" hidden>
           <div id="coachMessages" class="coach-messages" aria-live="polite"></div>
           <div id="coachSuggestions" class="coach-suggestions" aria-label="Suggested follow-ups"></div>
@@ -106,6 +128,7 @@
         </div>
 
         <div id="tutorStatusView" class="tutor-view" hidden>
+          <div id="intelReport" class="status-grid"></div>
           <div id="tutorStatusGrid" class="status-grid"></div>
           <div id="signalDistribution" class="signal-distribution"></div>
         </div>
@@ -191,10 +214,11 @@
           <div class="panel-heading">
             <div>
               <p class="eyebrow">Review</p>
-              <h2 id="reviewTitle">Due Now</h2>
+              <h2 id="reviewTitle">Signal Queue</h2>
             </div>
+            <span id="reviewCounter" class="status-pill muted">0 due</span>
           </div>
-          <div id="reviewList" class="list-output"></div>
+          <div id="reviewQueue" class="list-output"></div>
         </section>
       </aside>
 

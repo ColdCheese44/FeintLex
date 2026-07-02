@@ -131,6 +131,13 @@ The Coach tab is a real conversational tutor that runs fully offline:
 - **Persistent chat history** per session key in SQLite (`/tutor/chat/history`).
 - **Persistent mastery**: flashcard/drill signal strength syncs to the backend (`/tutor/mastery`) so progress survives browser resets.
 
+## Review Queue and Listening Drills
+
+- **Signal Queue** (side panel): one prioritized, gradeable queue blending due mistakes, lesson review items (vocabulary + sentence patterns), and weak tutor deck terms. Reveal the answer, grade yourself Got It / Missed, and each source reschedules itself — mistakes move through SRS intervals, review items complete or retry tomorrow, deck terms shift signal strength. API: `GET /review/queue`, `POST /review/complete`.
+- **Listen tab**: browser speech-synthesis listening drills weighted toward weak terms. Meaning mode (hear Spanish, choose the English) and Dictation mode (type what you hear — accent- and punctuation-insensitive matching). Adjustable speed: 0.7x / 0.9x / 1.1x.
+- **Intel Report** (Status tab): live training stats from `GET /progress/summary` — lessons, vocabulary, writing runs, chat volume, due reviews, and locked signals.
+- Autopsy and writing panels render structured result cards (with literal word-by-word glosses and green corrections) instead of raw JSON.
+
 Chat API:
 
 ```powershell

@@ -2,7 +2,20 @@ const state = {
   activeLesson: null,
   latestLessons: [],
   vocabulary: [],
-  reviewDue: { mistakes: [], review_items: [] },
+  reviewQueue: [],
+  reviewIndex: 0,
+  reviewRevealed: false,
+  progressSummary: null,
+  listen: {
+    mode: "meaning",
+    rate: 0.9,
+    item: null,
+    picked: null,
+    checked: false,
+    seen: 0,
+    right: 0,
+    streak: 0,
+  },
   tutor: {
     activeTab: "decks",
     selectedDeckId: "contact",
@@ -281,36 +294,99 @@ function renderVocabulary() {
     .join("");
 }
 
-function renderReviewDue() {
-  const list = $("reviewList");
-  const reviews = state.reviewDue.review_items || [];
-  const mistakes = state.reviewDue.mistakes || [];
-  const items = [
-    ...reviews.map((item) => `[${item.item_type}] ${item.prompt}`),
-    ...mistakes.map((item) => `[mistake] ${item.original_input} -> ${item.correction}`),
-  ];
+function renderReviewQueue() {
+  const container = $("reviewQueue");
+  const remaining = state.reviewQueue.length - state.reviewIndex;
+  $("reviewCounter").textContent = `${Math.max(0, remaining)} due`;
 
-  if (!items.length) {
-    list.innerHTML = '<p class="list-empty">Nothing due.</p>';
+  if (remaining <= 0) {
+    container.innerHTML = '<p class="list-empty">Queue clear. Generate lessons or run drills to feed it.</p>';
     return;
   }
-  list.innerHTML = `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+
+  const item = state.reviewQueue[state.reviewIndex];
+  container.innerHTML = `
+    <div class="review-card">
+      <span class="review-badge">${escapeHtml(item.kind)} · ${escapeHtml(item.badge || "")}</span>
+      <p class="review-prompt">${escapeHtml(item.prompt)}
+        ${item.speak ? `<button class="chat-speak" type="button" id="reviewSpeakButton">Say It</button>` : ""}</p>
+      ${
+        state.reviewRevealed
+          ? `<p class="review-answer">${escapeHtml(item.answer)}</p>
+             ${item.explanation ? `<p class="review-explanation">${escapeHtml(item.explanation)}</p>` : ""}
+             <div class="grade-actions">
+               <button id="reviewMissedButton" type="button">Missed</button>
+               <button id="reviewGotButton" class="primary-button" type="button">Got It</button>
+             </div>`
+          : `<button id="reviewRevealButton" class="primary-button" type="button">Show Answer</button>`
+      }
+    </div>
+  `;
+
+  const speakButton = $("reviewSpeakButton");
+  if (speakButton) speakButton.addEventListener("click", () => speakSpanish(item.speak));
+  const revealButton = $("reviewRevealButton");
+  if (revealButton)
+    revealButton.addEventListener("click", () => {
+      state.reviewRevealed = true;
+      renderReviewQueue();
+    });
+  const gotButton = $("reviewGotButton");
+  if (gotButton) gotButton.addEventListener("click", () => gradeReview("got"));
+  const missedButton = $("reviewMissedButton");
+  if (missedButton) missedButton.addEventListener("click", () => gradeReview("missed"));
+}
+
+async function gradeReview(result) {
+  const item = state.reviewQueue[state.reviewIndex];
+  if (!item) return;
+  try {
+    await api("/review/complete", {
+      method: "POST",
+      body: JSON.stringify({ kind: item.kind, id: item.id, result }),
+    });
+    state.reviewIndex += 1;
+    state.reviewRevealed = false;
+    renderReviewQueue();
+    if (item.kind === "term") {
+      // Keep local mastery in step with the backend grade.
+      const meta = TUTOR_ALL_TERMS.find((term) => term.es === item.prompt.replace("Translate: ", ""));
+      if (meta) {
+        const delta = result === "got" ? 1 : -1;
+        state.tutor.mastery[meta.id] = Math.max(0, Math.min(TUTOR_MAX_SIGNAL, getTermLevel(meta.id) + delta));
+        saveMastery();
+        renderTutor();
+      }
+    }
+    setStatus(`Review ${result === "got" ? "cleared" : "rescheduled"}.`);
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+async function refreshReviewQueue() {
+  state.reviewQueue = await api("/review/queue?limit=30");
+  state.reviewIndex = 0;
+  state.reviewRevealed = false;
+  renderReviewQueue();
 }
 
 async function refreshDashboard() {
-  const [health, lessons, vocabulary, reviewDue] = await Promise.all([
+  const [health, lessons, vocabulary, reviewQueue] = await Promise.all([
     api("/health"),
     api("/lessons?limit=12"),
     api("/vocabulary"),
-    api("/review/due"),
+    api("/review/queue?limit=30"),
   ]);
   renderHealth(health);
   state.latestLessons = lessons;
   state.vocabulary = vocabulary;
-  state.reviewDue = reviewDue;
+  state.reviewQueue = reviewQueue;
+  state.reviewIndex = 0;
+  state.reviewRevealed = false;
   renderLessonList();
   renderVocabulary();
-  renderReviewDue();
+  renderReviewQueue();
   if (!state.activeLesson && lessons.length) {
     await loadLesson(lessons[0].id);
   }
@@ -371,7 +447,7 @@ async function runAutopsy() {
         lesson_id: state.activeLesson?.id || null,
       }),
     });
-    $("autopsyOutput").innerHTML = `<pre>${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+    $("autopsyOutput").innerHTML = renderAutopsyCard(result);
     setStatus("Sentence autopsy complete.");
   } catch (error) {
     setStatus(error.message, true);
@@ -396,8 +472,9 @@ async function submitWriting() {
         related_lesson_id: state.activeLesson?.id || null,
       }),
     });
-    $("writingOutput").innerHTML = `<pre>${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
-    setStatus(`Writing submission #${result.id} stored.`);
+    $("writingOutput").innerHTML = renderWritingCard(result);
+    setStatus(`Writing submission #${result.id} stored. Detected issues feed the review queue.`);
+    await refreshReviewQueue();
   } catch (error) {
     setStatus(error.message, true);
   } finally {
@@ -546,11 +623,17 @@ function setTutorTab(tab) {
   document.querySelectorAll(".tutor-tab").forEach((button) => {
     button.classList.toggle("active", button.dataset.tutorTab === tab);
   });
-  ["decks", "study", "drill", "coach", "status"].forEach((name) => {
+  ["decks", "study", "drill", "listen", "coach", "status"].forEach((name) => {
     $(`tutor${name[0].toUpperCase()}${name.slice(1)}View`).hidden = name !== tab;
   });
   if (tab === "drill" && !state.tutor.drill) {
     nextDrill();
+  }
+  if (tab === "listen" && !state.listen.item) {
+    nextListen();
+  }
+  if (tab === "status") {
+    refreshProgressSummary();
   }
   renderTutor();
 }
@@ -611,12 +694,12 @@ function moveStudy(delta) {
   renderStudy();
 }
 
-function speakSpanish(text) {
+function speakSpanish(text, rate = 0.9) {
   try {
     if (!window.speechSynthesis) return;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "es-ES";
-    utterance.rate = 0.9;
+    utterance.rate = rate;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   } catch {
@@ -719,7 +802,189 @@ function chooseDrill(option) {
   renderDrill();
 }
 
+function normalizeSpanish(text) {
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function listenPool() {
+  return TUTOR_ALL_TERMS.filter((term) => term.xes && term.xen);
+}
+
+function nextListen() {
+  const pool = listenPool();
+  if (!pool.length) {
+    state.listen.item = null;
+    renderListen();
+    return;
+  }
+  const ranked = pool.slice().sort((a, b) => getTermLevel(a.id) - getTermLevel(b.id));
+  const weakWindow = ranked.slice(0, Math.max(4, Math.ceil(ranked.length / 3)));
+  const target = weakWindow[Math.floor(Math.random() * weakWindow.length)];
+  const distractors = shuffle(pool.filter((term) => term.id !== target.id && term.xen !== target.xen))
+    .slice(0, 3)
+    .map((term) => term.xen);
+  state.listen.item = {
+    target,
+    options: shuffle([target.xen, ...distractors]),
+  };
+  state.listen.picked = null;
+  state.listen.checked = false;
+  renderListen();
+  speakSpanish(target.xes, state.listen.rate);
+}
+
+function renderListen() {
+  const listen = state.listen;
+  $("listenHits").textContent = `Hits ${listen.right}/${listen.seen}`;
+  $("listenStreak").textContent = `Streak ${listen.streak}`;
+  const card = $("listenCard");
+  if (!listen.item) {
+    card.innerHTML = '<p class="list-empty">No listening material loaded.</p>';
+    return;
+  }
+
+  const done = listen.mode === "meaning" ? listen.picked !== null : listen.checked;
+  const target = listen.item.target;
+  const header = `
+    <span class="drill-direction">${listen.mode === "meaning" ? "What does the transmission mean?" : "Type exactly what you hear"}</span>
+    <div class="listen-controls">
+      <button id="listenPlayButton" class="primary-button" type="button">Play Transmission</button>
+      ${done ? "" : '<button id="listenSkipButton" type="button">Reveal (counts as miss)</button>'}
+    </div>
+  `;
+
+  let body = "";
+  if (listen.mode === "meaning") {
+    body = `
+      <div class="option-grid">
+        ${listen.item.options
+          .map((option, index) => {
+            const klass = listen.picked ? (option === target.xen ? "correct" : option === listen.picked ? "wrong" : "") : "";
+            return `
+              <button class="option-button listen-option ${klass}" type="button" data-option="${escapeHtml(option)}" ${listen.picked ? "disabled" : ""}>
+                <span class="option-num">${index + 1}</span>
+                <span>${escapeHtml(option)}</span>
+              </button>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
+  } else {
+    body = `
+      <div class="dictation-row">
+        <input id="dictationInput" type="text" spellcheck="false" autocomplete="off"
+          placeholder="Escribe lo que escuchas..." ${done ? "disabled" : ""}
+          value="${done ? escapeHtml(listen.picked || "") : ""}" />
+        ${done ? "" : '<button id="dictationCheckButton" class="primary-button" type="button">Check</button>'}
+      </div>
+    `;
+  }
+
+  const feedback = done
+    ? `
+      <div class="drill-feedback">
+        <strong>${listen.lastCorrect ? "Signal locked" : "Missed signal"}</strong>
+        <p><span class="card-label">Heard</span> ${escapeHtml(target.xes)}</p>
+        <p><span class="card-label">Meaning</span> ${escapeHtml(target.xen)}</p>
+        <button id="nextListenButton" class="primary-button" type="button">Next Transmission</button>
+      </div>
+    `
+    : "";
+
+  card.innerHTML = header + body + feedback;
+
+  $("listenPlayButton").addEventListener("click", () => speakSpanish(target.xes, state.listen.rate));
+  const skipButton = $("listenSkipButton");
+  if (skipButton) skipButton.addEventListener("click", () => finishListen(false, ""));
+  const nextButton = $("nextListenButton");
+  if (nextButton) nextButton.addEventListener("click", nextListen);
+  document.querySelectorAll(".listen-option").forEach((button) => {
+    button.addEventListener("click", () => {
+      const correct = button.dataset.option === target.xen;
+      finishListen(correct, button.dataset.option);
+    });
+  });
+  const checkButton = $("dictationCheckButton");
+  if (checkButton)
+    checkButton.addEventListener("click", () => {
+      const typed = $("dictationInput").value;
+      finishListen(normalizeSpanish(typed) === normalizeSpanish(target.xes), typed);
+    });
+  const dictationInput = $("dictationInput");
+  if (dictationInput && !done) {
+    dictationInput.focus();
+    dictationInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        finishListen(normalizeSpanish(dictationInput.value) === normalizeSpanish(target.xes), dictationInput.value);
+      }
+    });
+  }
+}
+
+function finishListen(correct, picked) {
+  const listen = state.listen;
+  if (!listen.item) return;
+  listen.picked = picked || "(revealed)";
+  listen.checked = true;
+  listen.lastCorrect = correct;
+  listen.seen += 1;
+  if (correct) {
+    listen.right += 1;
+    listen.streak += 1;
+    bumpTerm(listen.item.target.id, 1);
+  } else {
+    listen.streak = 0;
+    bumpTerm(listen.item.target.id, -1);
+  }
+  renderListen();
+}
+
+async function refreshProgressSummary() {
+  try {
+    state.progressSummary = await api("/progress/summary");
+    renderIntelReport();
+  } catch {
+    // Summary is a progressive enhancement.
+  }
+}
+
+function renderIntelReport() {
+  const summary = state.progressSummary;
+  if (!summary) {
+    $("intelReport").innerHTML = "";
+    return;
+  }
+  const metrics = [
+    ["Lessons", summary.lessons],
+    ["Vocab Terms", summary.vocabulary_terms],
+    ["Writing Runs", summary.writing_submissions],
+    ["Chat Messages", summary.chat_messages],
+    ["Mistakes Due", summary.mistakes_due],
+    ["Reviews Due", summary.review_items_due],
+    ["Signals Tracked", summary.mastery_tracked],
+    ["Signals Locked", summary.mastery_locked],
+  ];
+  $("intelReport").innerHTML = metrics
+    .map(
+      ([label, value]) => `
+        <div class="status-card">
+          <strong>${escapeHtml(value)}</strong>
+          <p class="list-empty">${escapeHtml(label)}</p>
+        </div>
+      `,
+    )
+    .join("");
+}
+
 function renderTutorStatus() {
+  renderIntelReport();
   $("tutorStatusGrid").innerHTML = TUTOR_DECKS.map((deck) => {
     const progress = deckProgress(deck);
     return `
@@ -1035,6 +1300,7 @@ function renderTutor() {
   renderStudy();
   renderDrillScope();
   renderDrill();
+  renderListen();
   renderTutorStatus();
   renderCoachMessages();
 }
@@ -1087,6 +1353,16 @@ function bindTutorEvents() {
     state.tutor.drillStreak = 0;
     nextDrill();
   });
+  $("listenMode").addEventListener("change", () => {
+    state.listen.mode = $("listenMode").value;
+    state.listen.seen = 0;
+    state.listen.right = 0;
+    state.listen.streak = 0;
+    nextListen();
+  });
+  $("listenRate").addEventListener("change", () => {
+    state.listen.rate = parseFloat($("listenRate").value) || 0.9;
+  });
   $("sendCoachButton").addEventListener("click", () => sendCoach());
   $("clearCoachButton").addEventListener("click", clearCoachHistory);
   $("coachInput").addEventListener("keydown", (event) => {
@@ -1129,6 +1405,8 @@ function bindEvents() {
   });
   $("runAutopsyButton").addEventListener("click", runAutopsy);
   $("submitWritingButton").addEventListener("click", submitWriting);
+  $("autopsyOutput").addEventListener("click", handleCoachClick);
+  $("writingOutput").addEventListener("click", handleCoachClick);
   $("exportLessonButton").addEventListener("click", exportLesson);
   bindTutorEvents();
 }
