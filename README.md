@@ -135,6 +135,15 @@ The Coach tab is a real conversational tutor that runs fully offline:
 - **Persistent chat history** per session key in SQLite (`/tutor/chat/history`).
 - **Persistent mastery**: flashcard/drill signal strength syncs to the backend (`/tutor/mastery`) so progress survives browser resets.
 
+## Method Sessions (🎧 tab)
+
+Two classic-method trainers, fully offline, feeding mastery/XP/streaks:
+
+- **Echo Session (Pimsleur-style)** — graduated interval recall inside the session: each line is introduced, then recalled at expanding gaps (+1, +3, +7, +14 prompts). Recalls show English first with a 4-second **anticipation countdown** — produce the Spanish aloud before the reveal. Long phrases rebuild with **backward buildup** ("...responder" → "necesita responder" → "el equipo necesita responder"), every chunk speakable.
+- **Constructor Session (Michel Thomas-style)** — no memorizing, only building: a **cognate rule** per session (-tion→-ción, -ty→-dad, -ly→-mente, -ble, -ary→-ario) that unlocks thousands of words instantly, a **verb handle** scaffolded from one word to full questions (quiero → quiero hablar → no quiero hablar → ¿por qué no quieres hablar?), and **tile-based sentence construction**.
+
+API: `GET /methods/session?method=echo|constructor`, `POST /methods/complete`.
+
 ## Review Queue and Listening Drills
 
 - **Signal Queue** (side panel): one prioritized, gradeable queue blending due mistakes, lesson review items (vocabulary + sentence patterns), and weak tutor deck terms. Reveal the answer, grade yourself Got It / Missed, and each source reschedules itself — mistakes move through SRS intervals, review items complete or retry tomorrow, deck terms shift signal strength. API: `GET /review/queue`, `POST /review/complete`.

@@ -52,6 +52,8 @@ Run this 6 days a week. The dashboard's **Daily Protocol** panel tracks it live.
 
 **Weekly rhythm:** 6 protocol days + 1 light day (only clear the queue + reread old lesson exports for speed — fluency work uses *easy, familiar* material).
 
+**Method sessions (optional, 10 min):** swap mission 5 or 6 for a 🎧 Method session 2-3× per week. **Echo Sessions** implement Pimsleur's graduated interval recall and anticipation principle — the strongest known drill for spoken production. **Constructor Sessions** implement Michel Thomas-style building blocks — cognate rules and verb handles that convert grammar study into instant sentence construction. Both count toward your drill mission and mastery signals.
+
 ## Writing SOP (what to write each day)
 
 Rotate through the week — reacting to what you read that day:

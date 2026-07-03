@@ -12,7 +12,7 @@ from feintlex import APP_NAME, __version__
 from feintlex.config import get_settings
 from feintlex.db import init_db
 from feintlex.logging_config import configure_logging
-from feintlex.routes import autopsy, content, health, lessons, program, progress, tutor, vocabulary, writing
+from feintlex.routes import autopsy, content, health, lessons, methods, program, progress, tutor, vocabulary, writing
 
 
 LOGGER = logging.getLogger("feintlex.app")
@@ -56,6 +56,7 @@ def create_app() -> FastAPI:
     application.include_router(writing.router)
     application.include_router(progress.router)
     application.include_router(program.router)
+    application.include_router(methods.router)
     application.include_router(tutor.router)
     return application
 

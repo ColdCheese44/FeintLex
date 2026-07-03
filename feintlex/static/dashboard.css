@@ -1049,6 +1049,152 @@ section[id] {
   }
 }
 
+.method-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.method-picker[hidden],
+.method-player[hidden] {
+  display: none;
+}
+
+.method-card {
+  display: grid;
+  gap: 8px;
+  min-height: 150px;
+  padding: 16px;
+  text-align: left;
+  align-content: start;
+}
+
+.method-card strong {
+  font-size: 16px;
+}
+
+.method-card span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.method-card em {
+  color: var(--quiet);
+  font-size: 11px;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.method-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.method-head button {
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--quiet);
+}
+
+.method-en {
+  margin: 4px 0 10px;
+  color: var(--muted);
+}
+
+.method-hint {
+  margin: 0 0 10px;
+  color: var(--quiet);
+  font-size: 13px;
+}
+
+.method-title {
+  margin: 6px 0 10px;
+  color: var(--amber);
+  font-size: 20px;
+}
+
+.countdown-ring {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  margin: 14px 0;
+  border: 2px solid var(--border-hot);
+  border-radius: 50%;
+  animation: countdown-pulse 1s ease-in-out infinite;
+}
+
+.countdown-ring span {
+  color: var(--amber);
+  font-size: 30px;
+  font-weight: 760;
+}
+
+@keyframes countdown-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(201, 162, 39, 0);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(201, 162, 39, 0.35);
+  }
+}
+
+.buildup {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.buildup-chunk {
+  justify-content: space-between;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  color: var(--green);
+}
+
+.buildup-chunk span {
+  color: var(--quiet);
+}
+
+.built-row,
+.tile-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+  min-height: 44px;
+}
+
+.built-row {
+  padding: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+
+.tile {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 15px;
+}
+
+.tile.built {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .countdown-ring {
+    animation: none;
+  }
+}
+
 .library-toolbar {
   display: flex;
   gap: 8px;

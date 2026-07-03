@@ -16,6 +16,18 @@ const state = {
     right: 0,
     streak: 0,
   },
+  method: {
+    plan: null,
+    index: 0,
+    results: {},
+    revealed: false,
+    countdown: 0,
+    built: [],
+    checked: false,
+    lastCorrect: null,
+    finished: false,
+    reported: false,
+  },
   tutor: {
     activeTab: "decks",
     selectedDeckId: "contact",
@@ -777,9 +789,15 @@ function setTutorTab(tab) {
   document.querySelectorAll(".tutor-tab").forEach((button) => {
     button.classList.toggle("active", button.dataset.tutorTab === tab);
   });
-  ["decks", "study", "drill", "listen", "coach", "library", "status"].forEach((name) => {
+  ["decks", "study", "drill", "listen", "method", "coach", "library", "status"].forEach((name) => {
     $(`tutor${name[0].toUpperCase()}${name.slice(1)}View`).hidden = name !== tab;
   });
+  if (tab !== "method") {
+    stopMethodCountdown();
+  }
+  if (tab === "method") {
+    renderMethod();
+  }
   if (tab === "drill" && !state.tutor.drill) {
     nextDrill();
   }
@@ -1527,6 +1545,16 @@ function bindTutorEvents() {
   $("listenRate").addEventListener("change", () => {
     state.listen.rate = parseFloat($("listenRate").value) || 0.9;
   });
+  $("startEchoButton").addEventListener("click", () => startMethodSession("echo"));
+  $("startConstructorButton").addEventListener("click", () => startMethodSession("constructor"));
+  $("methodPlayer").addEventListener("click", handleMethodClick);
+  $("methodPlayer").addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && event.target.id === "methodInput") {
+      event.preventDefault();
+      const step = currentMethodStep();
+      if (step && !state.method.checked) checkMethodAnswer(step, event.target.value);
+    }
+  });
   $("librarySearch").addEventListener("input", renderLibrary);
   $("libraryCategory").addEventListener("change", renderLibrary);
   $("libraryList").addEventListener("click", (event) => {
@@ -1559,6 +1587,350 @@ function bindTutorEvents() {
       sendCoach(prompts[button.dataset.coachAction] || button.dataset.coachAction);
     });
   });
+}
+
+// --- Method sessions (Echo / Constructor) -------------------------------------
+
+let methodCountdownTimer = null;
+
+function stopMethodCountdown() {
+  clearInterval(methodCountdownTimer);
+  methodCountdownTimer = null;
+}
+
+function resetMethodStep() {
+  stopMethodCountdown();
+  state.method.revealed = false;
+  state.method.countdown = 0;
+  state.method.built = [];
+  state.method.checked = false;
+  state.method.lastCorrect = null;
+}
+
+async function startMethodSession(kind) {
+  try {
+    const plan = await api(`/methods/session?method=${kind}${kind === "echo" ? "&size=6" : ""}`);
+    state.method.plan = plan;
+    state.method.index = 0;
+    state.method.results = {};
+    state.method.finished = false;
+    state.method.reported = false;
+    resetMethodStep();
+    renderMethod();
+    showToast(kind === "echo" ? "🔁 Echo Session started — say everything aloud." : "🧱 Constructor Session started — build, don't memorize.", "info", 3000);
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+function methodSteps() {
+  const plan = state.method.plan;
+  if (!plan) return [];
+  return plan.prompts || plan.steps || [];
+}
+
+function currentMethodStep() {
+  return methodSteps()[state.method.index] || null;
+}
+
+function recordMethodResult(step, correct) {
+  state.method.results[step.term_id] = {
+    term_id: step.term_id,
+    es: step.es || step.answer_es || "",
+    en: step.en || step.prompt_en || "",
+    correct,
+  };
+}
+
+async function finishMethodSession() {
+  stopMethodCountdown();
+  state.method.finished = true;
+  renderMethod();
+  if (state.method.reported) return;
+  const results = Object.values(state.method.results);
+  if (!results.length) return;
+  state.method.reported = true;
+  try {
+    const summary = await api("/methods/complete", {
+      method: "POST",
+      body: JSON.stringify({ method: state.method.plan.method, results }),
+    });
+    showToast(`🎧 Session logged: ${summary.correct}/${summary.recorded} signals locked.`, "gold", 3600);
+    scheduleHqRefresh();
+    scheduleProtocolRefresh();
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+function methodAdvance() {
+  resetMethodStep();
+  state.method.index += 1;
+  if (state.method.index >= methodSteps().length) {
+    finishMethodSession();
+    return;
+  }
+  renderMethod();
+}
+
+function startRecallCountdown() {
+  state.method.countdown = 4;
+  methodCountdownTimer = setInterval(() => {
+    state.method.countdown -= 1;
+    const node = $("methodCountdown");
+    if (node) node.textContent = state.method.countdown;
+    if (state.method.countdown <= 0) {
+      revealMethodStep();
+    }
+  }, 1000);
+}
+
+function revealMethodStep() {
+  stopMethodCountdown();
+  if (state.method.revealed) return;
+  state.method.revealed = true;
+  const step = currentMethodStep();
+  if (step && step.es) speakSpanish(step.es);
+  renderMethod();
+}
+
+function checkMethodAnswer(step, typed) {
+  const correct = normalizeSpanish(typed) === normalizeSpanish(step.answer_es);
+  state.method.checked = true;
+  state.method.lastCorrect = correct;
+  recordMethodResult(step, correct);
+  speakSpanish(step.answer_es);
+  renderMethod();
+}
+
+function chunksHtml(chunks) {
+  return `
+    <div class="buildup">
+      ${chunks
+        .map(
+          (chunk) => `
+            <button class="buildup-chunk" type="button" data-speak="${escapeHtml(chunk)}">
+              ${escapeHtml(chunk)} <span>🔊</span>
+            </button>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderMethod() {
+  const picker = $("methodPicker");
+  const player = $("methodPlayer");
+  const plan = state.method.plan;
+
+  if (!plan) {
+    picker.hidden = false;
+    player.hidden = true;
+    return;
+  }
+  picker.hidden = true;
+  player.hidden = false;
+
+  if (state.method.finished) {
+    const results = Object.values(state.method.results);
+    const correct = results.filter((r) => r.correct).length;
+    player.innerHTML = `
+      <div class="drill-card method-summary">
+        <span class="drill-direction">Session complete</span>
+        <p class="drill-prompt">${correct}/${results.length} signals locked</p>
+        <p class="list-empty">${escapeHtml(plan.title)}. Results feed your mastery, queue, and XP.</p>
+        <div class="listen-controls">
+          <button id="methodAgainButton" class="primary-button" type="button">Run Another</button>
+          <button id="methodExitButton" type="button">Back to Methods</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const steps = methodSteps();
+  const step = currentMethodStep();
+  if (!step) return;
+  const progress = `${state.method.index + 1} / ${steps.length}`;
+  const header = `
+    <div class="method-head">
+      <span class="review-badge">${escapeHtml(plan.method === "echo" ? "echo" : "constructor")} · ${progress}</span>
+      <button id="methodQuitButton" type="button" title="Abandon session">✕</button>
+    </div>
+  `;
+
+  let body = "";
+  const type = step.mode || step.type;
+
+  if (type === "introduce") {
+    body = `
+      <span class="drill-direction">New signal — listen, then say it aloud twice</span>
+      <p class="drill-prompt">${escapeHtml(step.es)}
+        <button class="chat-speak" type="button" data-speak="${escapeHtml(step.es)}">🔊</button></p>
+      <p class="method-en">${escapeHtml(step.en)}</p>
+      ${step.chunks.length > 1 ? `<p class="card-label">Build it from the tail</p>${chunksHtml(step.chunks)}` : ""}
+      <button id="methodContinueButton" class="primary-button" type="button">Got it — continue</button>
+    `;
+  } else if (type === "recall") {
+    if (!state.method.revealed) {
+      body = `
+        <span class="drill-direction">Recall ${step.recall_index}/${step.recall_total} — say it in Spanish NOW</span>
+        <p class="drill-prompt">${escapeHtml(step.en)}</p>
+        <div class="countdown-ring"><span id="methodCountdown">${state.method.countdown || 4}</span></div>
+        <button id="methodRevealButton" type="button">I said it — reveal</button>
+      `;
+    } else {
+      body = `
+        <span class="drill-direction">Did you produce it?</span>
+        <p class="drill-prompt">${escapeHtml(step.es)}
+          <button class="chat-speak" type="button" data-speak="${escapeHtml(step.es)}">🔊</button></p>
+        <p class="method-en">${escapeHtml(step.en)}</p>
+        ${step.chunks.length > 1 ? chunksHtml(step.chunks) : ""}
+        <div class="grade-actions">
+          <button id="methodMissedButton" type="button">Missed</button>
+          <button id="methodGotButton" class="primary-button" type="button">Got It</button>
+        </div>
+      `;
+    }
+  } else if (type === "teach") {
+    body = `
+      <span class="drill-direction">Building block</span>
+      <h3 class="method-title">${escapeHtml(step.title)}</h3>
+      <ul>${step.points.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul>
+      ${(step.examples || [])
+        .map(
+          (example) => `<p class="chat-example"><strong>${escapeHtml(example.es)}</strong> ${escapeHtml(example.en)}
+            <button class="chat-speak" type="button" data-speak="${escapeHtml(example.es)}">🔊</button></p>`,
+        )
+        .join("")}
+      <button id="methodContinueButton" class="primary-button" type="button">Ready — test me</button>
+    `;
+  } else if (type === "convert" || type === "produce") {
+    const label = type === "convert" ? "Convert it to Spanish" : "Say it, then type it";
+    if (!state.method.checked) {
+      body = `
+        <span class="drill-direction">${label}</span>
+        <p class="drill-prompt">${escapeHtml(step.prompt_en)}</p>
+        ${step.hint ? `<p class="method-hint">💡 ${escapeHtml(step.hint)}</p>` : ""}
+        <div class="dictation-row">
+          <input id="methodInput" type="text" spellcheck="false" autocomplete="off" placeholder="Escribe en espanol... (accents optional)" />
+          <button id="methodCheckButton" class="primary-button" type="button">Check</button>
+        </div>
+      `;
+    } else {
+      body = `
+        <span class="drill-direction">${state.method.lastCorrect ? "Constructed. That's the method." : "Close — study the pattern"}</span>
+        <p class="drill-prompt">${escapeHtml(step.answer_es)}
+          <button class="chat-speak" type="button" data-speak="${escapeHtml(step.answer_es)}">🔊</button></p>
+        <p class="method-en">${escapeHtml(step.prompt_en)}</p>
+        <button id="methodContinueButton" class="primary-button" type="button">Next</button>
+      `;
+    }
+  } else if (type === "build") {
+    const remaining = step.tiles.filter((tile, index) => !state.method.built.includes(index));
+    if (!state.method.checked) {
+      body = `
+        <span class="drill-direction">Build the sentence from tiles</span>
+        <p class="drill-prompt">${escapeHtml(step.prompt_en)}</p>
+        <div class="built-row">${
+          state.method.built.length
+            ? state.method.built
+                .map((tileIndex, position) => `<button class="tile built" type="button" data-unbuild="${position}">${escapeHtml(step.tiles[tileIndex])}</button>`)
+                .join("")
+            : '<span class="list-empty">Tap tiles below in order...</span>'
+        }</div>
+        <div class="tile-row">${step.tiles
+          .map((tile, tileIndex) =>
+            state.method.built.includes(tileIndex)
+              ? ""
+              : `<button class="tile" type="button" data-build="${tileIndex}">${escapeHtml(tile)}</button>`,
+          )
+          .join("")}</div>
+        <button id="methodCheckButton" class="primary-button" type="button" ${remaining.length ? "disabled" : ""}>Check</button>
+      `;
+    } else {
+      body = `
+        <span class="drill-direction">${state.method.lastCorrect ? "Constructed. That's the method." : "Close — study the order"}</span>
+        <p class="drill-prompt">${escapeHtml(step.answer_es)}
+          <button class="chat-speak" type="button" data-speak="${escapeHtml(step.answer_es)}">🔊</button></p>
+        <p class="method-en">${escapeHtml(step.prompt_en)}</p>
+        <button id="methodContinueButton" class="primary-button" type="button">Next</button>
+      `;
+    }
+  }
+
+  player.innerHTML = `${header}<div class="drill-card">${body}</div>`;
+
+  // Fresh recall prompts start their anticipation countdown.
+  if (type === "recall" && !state.method.revealed && !methodCountdownTimer) {
+    startRecallCountdown();
+  }
+  const input = $("methodInput");
+  if (input) input.focus();
+}
+
+function handleMethodClick(event) {
+  const speak = event.target.closest("[data-speak]");
+  if (speak) {
+    speakSpanish(speak.dataset.speak);
+    return;
+  }
+  const step = currentMethodStep();
+  if (event.target.closest("#methodQuitButton")) {
+    stopMethodCountdown();
+    state.method.plan = null;
+    renderMethod();
+    return;
+  }
+  if (event.target.closest("#methodAgainButton")) {
+    startMethodSession(state.method.plan.method);
+    return;
+  }
+  if (event.target.closest("#methodExitButton")) {
+    state.method.plan = null;
+    renderMethod();
+    return;
+  }
+  if (!step) return;
+  if (event.target.closest("#methodContinueButton")) {
+    methodAdvance();
+    return;
+  }
+  if (event.target.closest("#methodRevealButton")) {
+    revealMethodStep();
+    return;
+  }
+  if (event.target.closest("#methodGotButton")) {
+    recordMethodResult(step, true);
+    methodAdvance();
+    return;
+  }
+  if (event.target.closest("#methodMissedButton")) {
+    recordMethodResult(step, false);
+    methodAdvance();
+    return;
+  }
+  if (event.target.closest("#methodCheckButton")) {
+    if ((step.type || step.mode) === "build") {
+      const attempt = state.method.built.map((tileIndex) => step.tiles[tileIndex]).join(" ");
+      checkMethodAnswer(step, attempt);
+    } else {
+      checkMethodAnswer(step, $("methodInput") ? $("methodInput").value : "");
+    }
+    return;
+  }
+  const buildTile = event.target.closest("[data-build]");
+  if (buildTile) {
+    state.method.built.push(Number(buildTile.dataset.build));
+    renderMethod();
+    return;
+  }
+  const unbuildTile = event.target.closest("[data-unbuild]");
+  if (unbuildTile) {
+    state.method.built.splice(Number(unbuildTile.dataset.unbuild), 1);
+    renderMethod();
+  }
 }
 
 // --- HQ status bar and toasts ------------------------------------------------

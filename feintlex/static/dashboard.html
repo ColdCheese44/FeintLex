@@ -56,6 +56,7 @@
           <button class="tutor-tab" type="button" data-tutor-tab="study">🎴 Study</button>
           <button class="tutor-tab" type="button" data-tutor-tab="drill">🎯 Drill</button>
           <button class="tutor-tab" type="button" data-tutor-tab="listen">📻 Listen</button>
+          <button class="tutor-tab" type="button" data-tutor-tab="method">🎧 Method</button>
           <button class="tutor-tab" type="button" data-tutor-tab="coach">🎙 Coach</button>
           <button class="tutor-tab" type="button" data-tutor-tab="library">📖 Library</button>
           <button class="tutor-tab" type="button" data-tutor-tab="status">📊 Status</button>
@@ -126,6 +127,22 @@
           <div id="listenCard" class="drill-card">
             <p class="list-empty">Press Play to receive the transmission.</p>
           </div>
+        </div>
+
+        <div id="tutorMethodView" class="tutor-view" hidden>
+          <div id="methodPicker" class="method-picker">
+            <button id="startEchoButton" class="method-card" type="button">
+              <strong>🔁 Echo Session</strong>
+              <span>Graduated interval recall, Pimsleur-style. Hear it, anticipate it, say it aloud — recalls return at expanding gaps.</span>
+              <em>~10 min · speaking + memory</em>
+            </button>
+            <button id="startConstructorButton" class="method-card" type="button">
+              <strong>🧱 Constructor Session</strong>
+              <span>Michel Thomas-style building blocks: cognate rules that unlock thousands of words, verb handles, and sentence construction. No memorizing.</span>
+              <em>~10 min · construction + grammar</em>
+            </button>
+          </div>
+          <div id="methodPlayer" class="method-player" hidden></div>
         </div>
 
         <div id="tutorCoachView" class="tutor-view" hidden>
