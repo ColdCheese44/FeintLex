@@ -9,7 +9,7 @@ with any real training activity.
 """
 
 import logging
-from datetime import UTC, date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlmodel import Session, func, select
 
@@ -135,8 +135,6 @@ def _activity_dates(session: Session) -> set[date]:
 
 
 def activity_streak(session: Session) -> dict[str, object]:
-    from datetime import datetime
-
     dates = _activity_dates(session)
     today = datetime.now().astimezone().date()
     active_today = today in dates

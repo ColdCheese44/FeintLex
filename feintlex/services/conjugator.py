@@ -148,6 +148,78 @@ _IRREGULARS: dict[str, dict[str, list[str]]] = {
     "leer": {
         "preterite": ["leí", "leíste", "leyó", "leímos", "leísteis", "leyeron"],
     },
+    # High-frequency stem-changers (present tense boot pattern).
+    "cerrar": {
+        "present": ["cierro", "cierras", "cierra", "cerramos", "cerráis", "cierran"],
+    },
+    "comenzar": {
+        "present": ["comienzo", "comienzas", "comienza", "comenzamos", "comenzáis", "comienzan"],
+        "preterite": ["comencé", "comenzaste", "comenzó", "comenzamos", "comenzasteis", "comenzaron"],
+    },
+    "sentir": {
+        "present": ["siento", "sientes", "siente", "sentimos", "sentís", "sienten"],
+        "preterite": ["sentí", "sentiste", "sintió", "sentimos", "sentisteis", "sintieron"],
+    },
+    "dormir": {
+        "present": ["duermo", "duermes", "duerme", "dormimos", "dormís", "duermen"],
+        "preterite": ["dormí", "dormiste", "durmió", "dormimos", "dormisteis", "durmieron"],
+    },
+    "recordar": {
+        "present": ["recuerdo", "recuerdas", "recuerda", "recordamos", "recordáis", "recuerdan"],
+    },
+    "contar": {
+        "present": ["cuento", "cuentas", "cuenta", "contamos", "contáis", "cuentan"],
+    },
+    "mostrar": {
+        "present": ["muestro", "muestras", "muestra", "mostramos", "mostráis", "muestran"],
+    },
+    "costar": {
+        "present": ["cuesto", "cuestas", "cuesta", "costamos", "costáis", "cuestan"],
+    },
+    "morir": {
+        "present": ["muero", "mueres", "muere", "morimos", "morís", "mueren"],
+        "preterite": ["morí", "moriste", "murió", "morimos", "moristeis", "murieron"],
+    },
+    "servir": {
+        "present": ["sirvo", "sirves", "sirve", "servimos", "servís", "sirven"],
+        "preterite": ["serví", "serviste", "sirvió", "servimos", "servisteis", "sirvieron"],
+    },
+    "repetir": {
+        "present": ["repito", "repites", "repite", "repetimos", "repetís", "repiten"],
+        "preterite": ["repetí", "repetiste", "repitió", "repetimos", "repetisteis", "repitieron"],
+    },
+    "preferir": {
+        "present": ["prefiero", "prefieres", "prefiere", "preferimos", "preferís", "prefieren"],
+    },
+    "devolver": {
+        "present": ["devuelvo", "devuelves", "devuelve", "devolvemos", "devolvéis", "devuelven"],
+    },
+    "pedir": {
+        "present": ["pido", "pides", "pide", "pedimos", "pedís", "piden"],
+        "preterite": ["pedí", "pediste", "pidió", "pedimos", "pedisteis", "pidieron"],
+    },
+    "conseguir": {
+        "present": ["consigo", "consigues", "consigue", "conseguimos", "conseguís", "consiguen"],
+    },
+    "traer": {
+        "present": ["traigo", "traes", "trae", "traemos", "traéis", "traen"],
+        "preterite": ["traje", "trajiste", "trajo", "trajimos", "trajisteis", "trajeron"],
+    },
+    "oir": {
+        "present": ["oigo", "oyes", "oye", "oímos", "oís", "oyen"],
+        "preterite": ["oí", "oíste", "oyó", "oímos", "oísteis", "oyeron"],
+    },
+    "caer": {
+        "present": ["caigo", "caes", "cae", "caemos", "caéis", "caen"],
+        "preterite": ["caí", "caíste", "cayó", "caímos", "caísteis", "cayeron"],
+    },
+    "construir": {
+        "present": ["construyo", "construyes", "construye", "construimos", "construís", "construyen"],
+    },
+    "conducir": {
+        "present": ["conduzco", "conduces", "conduce", "conducimos", "conducís", "conducen"],
+        "preterite": ["conduje", "condujiste", "condujo", "condujimos", "condujisteis", "condujeron"],
+    },
 }
 
 

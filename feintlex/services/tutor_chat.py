@@ -22,7 +22,7 @@ from sqlmodel import Session, select
 from feintlex.config import Settings, get_settings
 from feintlex.models import Lesson, Mistake, TutorChatMessage, TutorMastery, utc_now
 from feintlex.services.ai_providers import generate_ai_reply, provider_enabled
-from feintlex.services.conjugator import TENSE_LABELS, conjugate, find_infinitive
+from feintlex.services.conjugator import conjugate, find_infinitive
 from feintlex.services.lexicon import literal_gloss, lookup, reverse_lookup
 from feintlex.services.sentence_autopsy import autopsy_sentence
 from feintlex.services.vocabulary import extract_vocabulary, tokenize
@@ -405,7 +405,7 @@ def _handle_autopsy(message: str) -> tuple[str, list[dict[str, object]]]:
     return reply, [{"type": "autopsy", **result}]
 
 
-def _handle_writing(session: Session, message: str, lesson: Lesson | None) -> tuple[str, list[dict[str, object]]]:
+def _handle_writing(message: str) -> tuple[str, list[dict[str, object]]]:
     text = _extract_target_text(message)
     text = re.sub(r"^(correct|check\s+my\s+writing|revisa|corrige|review|fix\s+my)\s*", "", text, flags=re.IGNORECASE).strip()
     if not text or len(tokenize(text)) < 2:
@@ -458,7 +458,7 @@ def _handle_study_plan(
     return "Here is today's signal plan — ordered by intelligence value.", [card]
 
 
-def _handle_explain(message: str, lesson: Lesson | None, context_line: str) -> tuple[str, list[dict[str, object]]]:
+def _handle_explain(message: str, context_line: str) -> tuple[str, list[dict[str, object]]]:
     text = _extract_target_text(message)
     vocab = extract_vocabulary(text, limit=6)
     gloss = literal_gloss(text) if len(tokenize(text)) > 1 else None
@@ -604,11 +604,11 @@ def respond_chat(
     elif intent == "autopsy":
         reply, cards = _handle_autopsy(cleaned)
     elif intent == "writing":
-        reply, cards = _handle_writing(session, cleaned, lesson)
+        reply, cards = _handle_writing(cleaned)
     elif intent == "study_plan":
         reply, cards = _handle_study_plan(lesson, weak, due_mistakes)
     else:
-        reply, cards = _handle_explain(cleaned, lesson, context_line)
+        reply, cards = _handle_explain(cleaned, context_line)
 
     provider = OFFLINE_PROVIDER
     # Conversational intents benefit most from the optional local model;

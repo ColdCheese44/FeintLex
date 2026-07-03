@@ -36,6 +36,37 @@ def test_derived_verb_form_lookup():
     assert "future" in lookup("hablaremos")
 
 
+def test_stem_changing_verbs_conjugate_correctly():
+    from feintlex.services.conjugator import conjugate
+
+    cerrar = conjugate("cerrar")
+    forms = [row["form"] for row in cerrar["tenses"]["present"]]
+    assert forms[0] == "cierro"
+    assert forms[3] == "cerramos", "nosotros keeps the unstressed stem"
+    # Stem-changed forms resolve through the derived-forms hover chain.
+    assert "to close" in lookup("cierra")
+    assert "to cost" in lookup("cuesta")
+    assert "to ask for" in lookup("pide")
+
+
+def test_contractions_and_domain_words_gloss():
+    assert "de+el" in lookup("del")
+    assert "a+el" in lookup("al")
+    assert lookup("analista") == "analyst"
+    assert lookup("actividad") == "activity"
+
+
+def test_sample_texts_have_full_gloss_coverage():
+    from feintlex.services.lexicon import coverage
+
+    text = (
+        "El equipo de seguridad detecta actividad sospechosa en la red porque un usuario "
+        "abre un correo con un archivo peligroso. El analista revisa las alertas y escribe "
+        "un informe claro. Despues, el equipo cierra el acceso y protege el sistema."
+    )
+    assert coverage(text) == 1.0, "bundled sample texts must gloss end to end"
+
+
 def test_fallback_chain_prefers_curated_over_derived():
     # 'amenazas' is both a plural noun and a verb form; the noun wins.
     assert lookup("amenazas") == "threat"
