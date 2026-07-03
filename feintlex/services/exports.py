@@ -7,7 +7,7 @@ from pathlib import Path
 from sqlmodel import Session, select
 
 from feintlex.config import Settings, get_settings
-from feintlex.models import ExportRecord, Lesson, SentenceAutopsy
+from feintlex.models import ExportRecord, Lesson, Mistake, SentenceAutopsy, TutorMastery
 
 
 LOGGER = logging.getLogger("feintlex.exports")
@@ -81,6 +81,55 @@ def lesson_to_markdown(session: Session, lesson: Lesson) -> str:
         lines.append(f"- [{item['type']}] {item['prompt']}")
     lines.append("")
     return "\n".join(lines)
+
+
+def export_anki_tsv(
+    session: Session,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, object]:
+    """Export mastery terms and the mistake bank as an Anki-importable TSV.
+
+    Format: front<TAB>back, one card per line. Import into Anki with
+    'Fields separated by: Tab'. Returns the path and card count (no
+    ExportRecord row — those are lesson-bound).
+    """
+    settings = settings or get_settings()
+    rows: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    terms = session.exec(
+        select(TutorMastery).where(TutorMastery.term != "").where(TutorMastery.translation != "")
+    ).all()
+    for term in terms:
+        front = term.term.strip()
+        if not front or front.lower() in seen:
+            continue
+        seen.add(front.lower())
+        rows.append((front, term.translation.strip()))
+
+    mistakes = session.exec(select(Mistake)).all()
+    for mistake in mistakes:
+        front = f"Fix: {mistake.original_input.strip()}"
+        if front.lower() in seen:
+            continue
+        seen.add(front.lower())
+        back = mistake.correction.strip()
+        if mistake.explanation:
+            back = f"{back} — {mistake.explanation.strip()}"
+        rows.append((front, back))
+
+    if not rows:
+        raise ValueError("Nothing to export yet — run some drills or submit writing first.")
+
+    def sanitize(value: str) -> str:
+        return " ".join(value.replace("\t", " ").split())
+
+    path = unique_path(settings.resolved_export_dir, "anki-cards.tsv")
+    lines = [f"{sanitize(front)}\t{sanitize(back)}" for front, back in rows]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    LOGGER.info("anki_exported", extra={"cards": len(rows), "path": str(path)})
+    return {"path": str(path), "cards": len(rows), "format": "anki_tsv"}
 
 
 def export_lesson_to_markdown(

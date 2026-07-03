@@ -1277,6 +1277,40 @@ section[id] {
   color: var(--amber);
 }
 
+.gloss-hint {
+  display: block;
+  margin-top: 3px;
+  color: var(--quiet);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.writing-prompt-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--amber);
+  border-radius: 6px;
+  background: #10120f;
+}
+
+.writing-prompt-bar p {
+  flex: 1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.writing-prompt-bar button {
+  min-height: 32px;
+  padding: 0 10px;
+}
+
 .gloss-zone {
   cursor: help;
 }

@@ -215,8 +215,10 @@
 
         <div class="action-row">
           <button id="generateLessonButton" class="primary-button" type="button">Import + Generate</button>
+          <button id="loadFileButton" type="button" title="Load a .txt, .srt, or .vtt file — subtitles are cleaned automatically">📄 File</button>
           <button id="sampleTextButton" type="button" title="Load a sample transmission to try the loop">Sample Intel</button>
           <button id="clearButton" type="button">Clear</button>
+          <input id="fileInput" type="file" accept=".txt,.srt,.vtt,.md" hidden />
         </div>
         <p id="workStatus" class="work-status" aria-live="polite">Ready.</p>
       </section>
@@ -265,6 +267,7 @@
               <p class="eyebrow">📈 Reinforcement</p>
               <h2 id="vocabTitle">Vocabulary Watchlist</h2>
             </div>
+            <button id="exportAnkiButton" type="button" title="Export mastery + mistake bank as an Anki-importable TSV">Anki</button>
           </div>
           <div id="vocabList" class="chip-field gloss-zone"></div>
         </section>
@@ -300,6 +303,10 @@
             <h2 id="writingTitle">Writing Practice</h2>
           </div>
           <button id="submitWritingButton" type="button">Submit</button>
+        </div>
+        <div class="writing-prompt-bar">
+          <p id="writingPromptText">Loading today's prompt...</p>
+          <button id="newWritingPromptButton" type="button" title="Different prompt">🎲</button>
         </div>
         <textarea id="writingInput" spellcheck="false" placeholder="Escribe tu respuesta en espanol..."></textarea>
         <div id="writingOutput" class="structured-output gloss-zone"></div>

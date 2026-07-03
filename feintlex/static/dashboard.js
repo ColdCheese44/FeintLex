@@ -274,6 +274,7 @@ function renderHealth(payload) {
 function renderLesson(lesson) {
   state.activeLesson = lesson;
   $("exportLessonButton").disabled = !lesson?.id;
+  renderWritingPrompt();
 
   if (!lesson) {
     $("lessonOutput").className = "lesson-output empty-state gloss-zone";
@@ -714,6 +715,17 @@ async function pushMastery() {
     seen: 0,
     correct: 0,
   }));
+  (state.captured || []).forEach((item) => {
+    items.push({
+      term_id: item.id,
+      deck_id: "captured",
+      term: item.es,
+      translation: item.en,
+      level: getTermLevel(item.id),
+      seen: 0,
+      correct: 0,
+    });
+  });
   try {
     await api("/tutor/mastery", { method: "PUT", body: JSON.stringify({ items }) });
   } catch {
@@ -733,6 +745,10 @@ async function pullMastery() {
       const local = state.tutor.mastery[row.term_id] || 0;
       state.tutor.mastery[row.term_id] = Math.max(local, row.level);
     });
+    state.captured = rows
+      .filter((row) => row.deck_id === "captured" && row.term && row.translation)
+      .map((row) => ({ id: row.term_id, es: row.term, en: row.translation, deck: "captured" }));
+    state.capturedIds = new Set(state.captured.map((item) => item.id));
     saveMastery();
     renderTutor();
   } catch {
@@ -880,20 +896,34 @@ function speakSpanish(text, rate = 0.9) {
 }
 
 function renderDrillScope() {
+  const capturedCount = (state.captured || []).length;
   $("drillScope").innerHTML = [
     '<option value="all">All Decks</option>',
+    `<option value="captured">🎯 Captured (${capturedCount})</option>`,
     ...TUTOR_DECKS.map((deck) => `<option value="${deck.id}">${escapeHtml(deck.name)}</option>`),
   ].join("");
   $("drillScope").value = state.tutor.drillScope;
 }
 
 function drillPool() {
-  if (state.tutor.drillScope === "all") return TUTOR_ALL_TERMS;
+  if (state.tutor.drillScope === "all") {
+    return [...TUTOR_ALL_TERMS, ...(state.captured || [])];
+  }
+  if (state.tutor.drillScope === "captured") {
+    return state.captured || [];
+  }
   return TUTOR_ALL_TERMS.filter((term) => term.deck === state.tutor.drillScope);
 }
 
 function nextDrill() {
   const pool = drillPool();
+  if (pool.length < 2) {
+    state.tutor.drill = null;
+    state.tutor.drillPicked = null;
+    $("drillCard").innerHTML =
+      '<p class="list-empty">Not enough terms in this scope yet. Hover words while reading and click to capture them — they land here.</p>';
+    return;
+  }
   const ranked = pool.slice().sort((a, b) => getTermLevel(a.id) - getTermLevel(b.id));
   const weakWindow = ranked.slice(0, Math.max(4, Math.ceil(ranked.length / 3)));
   const target = weakWindow[Math.floor(Math.random() * weakWindow.length)] || pool[0];
@@ -919,7 +949,10 @@ function renderDrill() {
   $("drillHits").textContent = `Hits ${state.tutor.drillRight}/${state.tutor.drillSeen}`;
   $("drillStreak").textContent = `Streak ${state.tutor.drillStreak}`;
   if (!drill) {
-    $("drillCard").innerHTML = '<p class="list-empty">No drill loaded.</p>';
+    $("drillCard").innerHTML =
+      drillPool().length < 2
+        ? '<p class="list-empty">Not enough terms in this scope yet. Hover words while reading and click to capture them — they land here.</p>'
+        : '<p class="list-empty">No drill loaded.</p>';
     return;
   }
   const picked = state.tutor.drillPicked;
@@ -2188,9 +2221,39 @@ function renderLibrary() {
     .join("") || '<p class="list-empty">No matches. Try a shorter search.</p>';
 }
 
+let activeGlossHit = null;
+
 function hideHoverGloss() {
+  activeGlossHit = null;
   const tip = $("hoverGloss");
   if (!tip.hidden) tip.hidden = true;
+}
+
+async function captureActiveGloss(event) {
+  // Click a hover-glossed word to mine it into the Captured deck.
+  if (!activeGlossHit) return;
+  const zone = event.target.closest(".gloss-zone");
+  if (!zone || event.target.closest("button, a, input, select, textarea")) return;
+  const hit = activeGlossHit;
+  try {
+    const result = await api("/tutor/capture", {
+      method: "POST",
+      body: JSON.stringify({
+        term: hit.term.toLowerCase(),
+        translation: hit.gloss,
+        context: hit.context || "",
+      }),
+    });
+    if (result.already_captured) {
+      showToast(`🎯 Already tracking: ${result.term}`, "info", 1800);
+    } else {
+      showToast(`🎯 Captured: ${result.term} — it will start appearing in drills.`, "good", 2600);
+      await pullMastery();
+      scheduleHqRefresh();
+    }
+  } catch (error) {
+    setStatus(error.message, true);
+  }
 }
 
 function handleGlossHover(event) {
@@ -2207,9 +2270,11 @@ function handleGlossHover(event) {
     hideHoverGloss();
     return;
   }
+  activeGlossHit = found;
 
+  const captured = !!state.capturedIds && state.capturedIds.has(`captured:${normalizeSpanish(found.term)}`);
   const tip = $("hoverGloss");
-  tip.innerHTML = `<strong>${escapeHtml(found.term.toLowerCase())}</strong> ${escapeHtml(found.gloss)}`;
+  tip.innerHTML = `<strong>${escapeHtml(found.term.toLowerCase())}</strong> ${escapeHtml(found.gloss)}<span class="gloss-hint">${captured ? "🎯 tracked" : "click to capture"}</span>`;
   tip.hidden = false;
   const pad = 14;
   const width = tip.offsetWidth;
@@ -2227,6 +2292,55 @@ const SAMPLE_INTEL = [
   "El equipo gana el partido porque el delantero marca dos goles en la segunda parte. El portero hace una parada importante cuando el rival avanza. Después del partido, el entrenador explica el plan y los jugadores celebran con la gente. La temporada sigue la próxima semana.",
   "El periodista investiga el caso porque una fuente habla de un acuerdo secreto. La policía busca evidencia en la oficina y encuentra documentos importantes. El gobierno responde con una declaración corta. Sin embargo, hay más preguntas que respuestas y la investigación continúa.",
 ];
+
+function loadTextFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    $("sourceText").value = String(reader.result || "");
+    const isSubtitle = /\.(srt|vtt)$/i.test(file.name);
+    if (isSubtitle) $("sourceType").value = "subtitle";
+    setStatus(`Loaded ${file.name} (${Math.round(file.size / 1024)} KB). Hit Import + Generate.`);
+    showToast(
+      isSubtitle ? "📄 Subtitles loaded — timestamps get stripped on import." : `📄 ${file.name} loaded.`,
+      "info",
+      2600,
+    );
+  };
+  reader.onerror = () => setStatus(`Could not read ${file.name}.`, true);
+  reader.readAsText(file);
+}
+
+const WRITING_PROMPTS = [
+  (title) => `SUMMARY: In 5 sentences, summarize "${title}". Use past tenses and at least one connector.`,
+  (title) => `OPINION: Do you agree with what happens in "${title}"? Write "creo que..." / "no creo que..." and explain porque.`,
+  (title) => `INTERROGATION: Write 5 questions you would ask the main actor of "${title}". Use dónde, por qué, quién, cuándo, cómo.`,
+  (title) => `PREDICTION: What happens next after "${title}"? Use "va a + infinitive" or the future tense.`,
+  (title) => `RETELLING: Retell "${title}" from another actor's point of view. Watch your verb persons.`,
+  () => "FREE WRITE: Write about anything — but use 3 terms from your weak-signal list and one connector.",
+];
+
+function renderWritingPrompt(advance = false) {
+  if (advance) {
+    state.writingPromptIndex = ((state.writingPromptIndex ?? new Date().getDay() % WRITING_PROMPTS.length) + 1) % WRITING_PROMPTS.length;
+  } else if (state.writingPromptIndex === undefined) {
+    state.writingPromptIndex = new Date().getDay() % WRITING_PROMPTS.length;
+  }
+  const title = state.activeLesson?.title || "your latest reading";
+  $("writingPromptText").textContent = WRITING_PROMPTS[state.writingPromptIndex](title);
+}
+
+async function exportAnki() {
+  $("exportAnkiButton").disabled = true;
+  try {
+    const result = await api("/exports/anki", { method: "POST" });
+    showToast(`🃏 ${result.cards} Anki cards exported.`, "good", 3200);
+    setStatus(`Anki TSV saved: ${result.path}`);
+  } catch (error) {
+    setStatus(error.message, true);
+  } finally {
+    $("exportAnkiButton").disabled = false;
+  }
+}
 
 function loadSampleIntel() {
   const sample = SAMPLE_INTEL[Math.floor(Math.random() * SAMPLE_INTEL.length)];
@@ -2259,6 +2373,15 @@ function bindEvents() {
   document.addEventListener("mousemove", handleGlossHover);
   document.addEventListener("scroll", hideHoverGloss, true);
   document.addEventListener("mouseleave", hideHoverGloss);
+  document.addEventListener("click", captureActiveGloss);
+  $("loadFileButton").addEventListener("click", () => $("fileInput").click());
+  $("fileInput").addEventListener("change", () => {
+    const file = $("fileInput").files[0];
+    if (file) loadTextFile(file);
+    $("fileInput").value = "";
+  });
+  $("newWritingPromptButton").addEventListener("click", () => renderWritingPrompt(true));
+  $("exportAnkiButton").addEventListener("click", exportAnki);
   $("exportLessonButton").addEventListener("click", exportLesson);
   bindTutorEvents();
 }
@@ -2267,4 +2390,5 @@ bindEvents();
 initializeTutor();
 loadLexicon();
 loadHq();
+renderWritingPrompt();
 refreshDashboard().catch((error) => setStatus(error.message, true));

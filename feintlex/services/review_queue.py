@@ -87,8 +87,21 @@ def build_review_queue(session: Session, *, limit: int = 20) -> list[dict[str, o
             }
         )
 
-    queue.sort(key=lambda entry: entry["priority"])
-    return queue[:limit]
+    # Interleave kinds round-robin instead of blocking by type: mixed
+    # practice (mistake, then term, then sentence...) beats massed blocks
+    # for retention, and it keeps the queue from feeling repetitive.
+    buckets: dict[int, list[dict[str, object]]] = {}
+    for entry in queue:
+        buckets.setdefault(int(entry["priority"]), []).append(entry)
+    ordered_buckets = [buckets[key] for key in sorted(buckets)]
+    interleaved: list[dict[str, object]] = []
+    index = 0
+    while any(index < len(bucket) for bucket in ordered_buckets):
+        for bucket in ordered_buckets:
+            if index < len(bucket):
+                interleaved.append(bucket[index])
+        index += 1
+    return interleaved[:limit]
 
 
 def complete_review(

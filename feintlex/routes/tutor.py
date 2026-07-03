@@ -10,8 +10,10 @@ from feintlex.db import get_session
 from feintlex.models import Lesson
 from feintlex.services.tutor import TutorContext, generate_tutor_response
 from feintlex.services.tutor_chat import (
+    capture_term,
     clear_history,
     get_all_mastery,
+    get_captured,
     get_history,
     respond_chat,
     sync_mastery,
@@ -37,6 +39,12 @@ class TutorChatRequest(BaseModel):
 
 class MasterySyncRequest(BaseModel):
     items: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class CaptureRequest(BaseModel):
+    term: str = Field(min_length=1, max_length=80)
+    translation: str = Field(default="", max_length=200)
+    context: str = Field(default="", max_length=400)
 
 
 @router.post("/tutor/respond")
@@ -96,3 +104,21 @@ def tutor_mastery_route(session: Session = Depends(get_session)):
 @router.put("/tutor/mastery")
 def tutor_mastery_sync_route(payload: MasterySyncRequest, session: Session = Depends(get_session)):
     return sync_mastery(session, payload.items)
+
+
+@router.post("/tutor/capture")
+def tutor_capture_route(payload: CaptureRequest, session: Session = Depends(get_session)):
+    try:
+        return capture_term(
+            session,
+            term=payload.term,
+            translation=payload.translation,
+            context=payload.context,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/tutor/captured")
+def tutor_captured_route(session: Session = Depends(get_session)):
+    return get_captured(session)

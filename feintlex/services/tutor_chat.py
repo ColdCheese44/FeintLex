@@ -25,7 +25,7 @@ from feintlex.services.ai_providers import generate_ai_reply, provider_enabled
 from feintlex.services.conjugator import conjugate, find_infinitive
 from feintlex.services.lexicon import literal_gloss, lookup, reverse_lookup
 from feintlex.services.sentence_autopsy import autopsy_sentence
-from feintlex.services.vocabulary import extract_vocabulary, tokenize
+from feintlex.services.vocabulary import extract_vocabulary, normalize_term, tokenize
 from feintlex.services.writing_coach import analyze_writing
 
 
@@ -638,6 +638,62 @@ def respond_chat(
         "provider": provider,
         "session_key": session_key,
     }
+
+
+# --- Word capture (sentence mining) -------------------------------------------
+
+def capture_term(
+    session: Session,
+    *,
+    term: str,
+    translation: str = "",
+    context: str = "",
+) -> dict[str, object]:
+    """File a word met while reading into the personal Captured deck.
+
+    Captured rows live in TutorMastery (deck 'captured'), so they flow
+    into drills, the review queue, chat quizzes, and XP automatically.
+    """
+    cleaned = " ".join(term.strip().split())
+    if not cleaned:
+        raise ValueError("Nothing to capture.")
+    normalized = normalize_term(cleaned)
+    gloss = translation.strip() or lookup(cleaned) or ""
+    if not gloss:
+        raise ValueError(f"No translation available for '{cleaned}'. Ask the coach about it instead.")
+
+    term_id = f"captured:{normalized[:60]}"
+    row = session.exec(select(TutorMastery).where(TutorMastery.term_id == term_id)).first()
+    already = row is not None
+    if row is None:
+        row = TutorMastery(
+            term_id=term_id,
+            deck_id="captured",
+            term=cleaned.lower(),
+            translation=gloss[:120],
+            level=0,
+        )
+        session.add(row)
+        session.commit()
+    LOGGER.info(
+        "term_captured",
+        extra={"term_id": term_id, "already": already, "has_context": bool(context)},
+    )
+    return {
+        "term_id": term_id,
+        "term": row.term,
+        "translation": row.translation,
+        "already_captured": already,
+        "level": row.level,
+    }
+
+
+def get_captured(session: Session) -> list[TutorMastery]:
+    return list(
+        session.exec(
+            select(TutorMastery).where(TutorMastery.deck_id == "captured").order_by(TutorMastery.updated_at.desc())
+        ).all()
+    )
 
 
 # --- Mastery sync ------------------------------------------------------------

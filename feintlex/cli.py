@@ -103,6 +103,22 @@ def review_due_command() -> None:
         print_json({"mistakes": mistakes})
 
 
+@app.command("backup")
+def backup_command(
+    dest: str = typer.Option(None, "--dest", help="Destination folder (default: <project>/backups)."),
+) -> None:
+    """Zip a hot copy of the database plus all exports."""
+    from feintlex.services.backup import create_backup
+
+    bootstrap()
+    try:
+        result = create_backup(dest_dir=dest)
+    except ValueError as exc:
+        typer.echo(f"Backup skipped: {exc}")
+        raise typer.Exit(code=1) from exc
+    print_json(result)
+
+
 @app.command("chat")
 def chat_command(
     message: str = typer.Option(None, "--message", "-m", help="One-shot message; omit for interactive mode."),

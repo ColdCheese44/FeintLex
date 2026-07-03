@@ -45,6 +45,11 @@ def test_dashboard_assets_are_served(tmp_path, monkeypatch):
     assert "Constructor Session" in dashboard.text
     assert "/methods/session" in js.text
     assert "/methods/complete" in js.text
+    assert "/tutor/capture" in js.text
+    assert "fileInput" in dashboard.text
+    assert "writingPromptText" in dashboard.text
+    assert "exportAnkiButton" in dashboard.text
+    assert "/exports/anki" in js.text
     clear_engine_cache()
 
 

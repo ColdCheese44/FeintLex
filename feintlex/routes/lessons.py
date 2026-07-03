@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 
 from feintlex.db import get_session
 from feintlex.models import ExportRecord, Lesson
-from feintlex.services.exports import export_lesson_to_markdown
+from feintlex.services.exports import export_anki_tsv, export_lesson_to_markdown
 from feintlex.services.lesson_generator import generate_lesson
 
 
@@ -46,6 +46,14 @@ def export_lesson_route(lesson_id: int, session: Session = Depends(get_session))
         return export_lesson_to_markdown(session, lesson_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/exports/anki")
+def export_anki_route(session: Session = Depends(get_session)):
+    try:
+        return export_anki_tsv(session)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/exports")
