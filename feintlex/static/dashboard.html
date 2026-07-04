@@ -23,222 +23,23 @@
       </div>
       <div class="status-strip" aria-live="polite">
         <span id="hqStreak" class="status-pill streak-pill" title="Consecutive training days">🔥 0</span>
-        <span id="hqMissions" class="status-pill" title="Today's protocol">🎯 0/6</span>
+        <a id="hqMissions" class="status-pill" href="#today" title="Today's protocol">🎯 0/6</a>
         <span id="healthStatus" class="status-pill">Checking</span>
         <span id="dbStatus" class="status-pill muted">SQLite</span>
         <span id="envStatus" class="status-pill muted">local</span>
       </div>
-      <nav class="hq-nav" aria-label="Sections">
-        <a href="#tutorSection">🎴 Tutor</a>
-        <a href="#intakeSection">📡 Intake</a>
-        <a href="#lessonSection">📋 Lesson</a>
-        <a href="#autopsySection">🔬 Autopsy</a>
-        <a href="#writingSection">✍️ Writing</a>
+      <nav class="hq-nav" aria-label="Pages">
+        <a href="#today" data-page="today" class="active">🏠 Today</a>
+        <a href="#read" data-page="read">📖 Read</a>
+        <a href="#write" data-page="write">✍️ Write</a>
+        <a href="#train" data-page="train">🎴 Train</a>
       </nav>
+      <p id="workStatus" class="work-status" aria-live="polite">Ready.</p>
     </header>
 
     <main class="shell">
-      <section id="tutorSection" class="panel tutor-panel" aria-labelledby="tutorTitle">
-        <div class="panel-heading tutor-heading">
-          <div>
-            <p class="eyebrow">Signal Tutor</p>
-            <h2 id="tutorTitle">Interactive AI Coach</h2>
-          </div>
-          <div class="tutor-signal">
-            <span>Overall</span>
-            <div id="overallSignalBars" class="signal-bars" aria-label="Overall signal strength"></div>
-            <strong id="overallSignalPercent">0%</strong>
-          </div>
-        </div>
-
-        <div class="tutor-tabs" role="tablist" aria-label="Tutor workspace">
-          <button class="tutor-tab active" type="button" data-tutor-tab="decks">🗂 Decks</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="study">🎴 Study</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="drill">🎯 Drill</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="listen">📻 Listen</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="method">🎧 Method</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="coach">🎙 Coach</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="library">📖 Library</button>
-          <button class="tutor-tab" type="button" data-tutor-tab="status">📊 Status</button>
-        </div>
-
-        <div id="tutorDecksView" class="tutor-view">
-          <div class="tutor-toolbar">
-            <p class="list-empty">Scenario decks from the field kit. Pick a deck, drill weak terms, then ask the coach for grammar and sentence patterns.</p>
-            <button id="resetTutorProgressButton" type="button">Reset Progress</button>
-          </div>
-          <div id="deckGrid" class="deck-grid"></div>
-        </div>
-
-        <div id="tutorStudyView" class="tutor-view" hidden>
-          <div class="study-bar">
-            <button id="backToDecksButton" type="button">Decks</button>
-            <div>
-              <strong id="studyDeckName">Deck</strong>
-              <span id="studyCounter">01 / 01</span>
-            </div>
-            <div id="studySignalBars" class="signal-bars"></div>
-          </div>
-          <button id="flashcard" class="flashcard" type="button">
-            <span id="flashSide" class="face-tag">ES</span>
-            <strong id="flashPrimary">hola</strong>
-            <span id="flashNote">tap to reveal</span>
-            <span id="flashExample"></span>
-          </button>
-          <div class="study-actions">
-            <button id="previousTermButton" type="button">Prev</button>
-            <button id="speakTermButton" type="button">Say It</button>
-            <button id="coachTermButton" type="button">Ask Coach</button>
-            <button id="nextTermButton" type="button">Next</button>
-          </div>
-          <div class="grade-actions">
-            <button id="missedTermButton" type="button">Missed</button>
-            <button id="gotTermButton" class="primary-button" type="button">Got It</button>
-          </div>
-        </div>
-
-        <div id="tutorDrillView" class="tutor-view" hidden>
-          <div class="drill-toolbar">
-            <select id="drillScope" aria-label="Drill scope"></select>
-            <div class="score-line">
-              <span id="drillHits">Hits 0/0</span>
-              <span id="drillStreak">Streak 0</span>
-            </div>
-          </div>
-          <div id="drillCard" class="drill-card"></div>
-        </div>
-
-        <div id="tutorListenView" class="tutor-view" hidden>
-          <div class="drill-toolbar">
-            <select id="listenMode" aria-label="Listening mode">
-              <option value="meaning">Meaning (choose English)</option>
-              <option value="dictation">Dictation (type what you hear)</option>
-            </select>
-            <select id="listenRate" aria-label="Speech speed">
-              <option value="0.7">Slow 0.7x</option>
-              <option value="0.9" selected>Normal 0.9x</option>
-              <option value="1.1">Fast 1.1x</option>
-            </select>
-            <div class="score-line">
-              <span id="listenHits">Hits 0/0</span>
-              <span id="listenStreak">Streak 0</span>
-            </div>
-          </div>
-          <div id="listenCard" class="drill-card">
-            <p class="list-empty">Press Play to receive the transmission.</p>
-          </div>
-        </div>
-
-        <div id="tutorMethodView" class="tutor-view" hidden>
-          <div id="methodPicker" class="method-picker">
-            <button id="startEchoButton" class="method-card" type="button">
-              <strong>🔁 Echo Session</strong>
-              <span>Graduated interval recall, Pimsleur-style. Hear it, anticipate it, say it aloud — recalls return at expanding gaps.</span>
-              <em>~10 min · speaking + memory</em>
-            </button>
-            <button id="startConstructorButton" class="method-card" type="button">
-              <strong>🧱 Constructor Session</strong>
-              <span>Michel Thomas-style building blocks: cognate rules that unlock thousands of words, verb handles, and sentence construction. No memorizing.</span>
-              <em>~10 min · construction + grammar</em>
-            </button>
-          </div>
-          <div id="methodPlayer" class="method-player" hidden></div>
-        </div>
-
-        <div id="tutorCoachView" class="tutor-view" hidden>
-          <div id="coachMessages" class="coach-messages gloss-zone" aria-live="polite"></div>
-          <div id="coachSuggestions" class="coach-suggestions" aria-label="Suggested follow-ups"></div>
-          <div class="coach-quick-actions">
-            <button type="button" data-coach-action="explain">Explain</button>
-            <button type="button" data-coach-action="quiz">Quiz</button>
-            <button type="button" data-coach-action="autopsy">Autopsy</button>
-            <button type="button" data-coach-action="writing">Writing</button>
-            <button type="button" data-coach-action="conjugate">Conjugate</button>
-            <button type="button" data-coach-action="plan">Plan</button>
-            <button id="clearCoachButton" type="button" title="Clear chat history">Clear</button>
-          </div>
-          <div class="coach-input-row">
-            <textarea id="coachInput" spellcheck="false" placeholder="Ask anything: 'conjugate tener', 'ser vs estar', 'quiz me', 'correct: <tu texto>'... Enter to send."></textarea>
-            <button id="sendCoachButton" class="primary-button" type="button">Send</button>
-          </div>
-        </div>
-
-        <div id="tutorLibraryView" class="tutor-view" hidden>
-          <div class="library-toolbar">
-            <input id="librarySearch" type="text" spellcheck="false" placeholder="Search Spanish or English... (e.g. amenaza, threat)" />
-            <select id="libraryCategory" aria-label="Category filter">
-              <option value="all">All Categories</option>
-            </select>
-          </div>
-          <p id="libraryCount" class="list-empty">Loading the library...</p>
-          <div id="libraryList" class="library-list gloss-zone"></div>
-        </div>
-
-        <div id="tutorStatusView" class="tutor-view" hidden>
-          <div id="intelReport" class="status-grid"></div>
-          <div id="tutorStatusGrid" class="status-grid"></div>
-          <div id="signalDistribution" class="signal-distribution"></div>
-        </div>
-      </section>
-
-      <section id="intakeSection" class="panel intake-panel" aria-labelledby="intakeTitle">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">📡 Immersion</p>
-            <h2 id="intakeTitle">Source Intake</h2>
-          </div>
-          <select id="sourceType" aria-label="Source type">
-            <option value="pasted_text">Pasted Text</option>
-            <option value="article">Article</option>
-            <option value="subtitle">Subtitle</option>
-            <option value="transcript">Transcript</option>
-            <option value="manual_note">Manual Note</option>
-          </select>
-        </div>
-
-        <textarea
-          id="sourceText"
-          spellcheck="false"
-          placeholder="Pega texto en espanol aqui..."
-        ></textarea>
-
-        <div class="topic-grid" aria-label="Topic tags">
-          <label><input type="checkbox" name="topic" value="soccer" /> Soccer</label>
-          <label><input type="checkbox" name="topic" value="cybersecurity" /> Cybersecurity</label>
-          <label><input type="checkbox" name="topic" value="investigation" /> Investigation</label>
-          <label><input type="checkbox" name="topic" value="news" /> News</label>
-          <label><input type="checkbox" name="topic" value="tv" /> TV</label>
-          <label><input type="checkbox" name="topic" value="general" /> General</label>
-        </div>
-
-        <input id="extraTags" type="text" placeholder="extra tags, comma separated" />
-
-        <div class="action-row">
-          <button id="generateLessonButton" class="primary-button" type="button">Import + Generate</button>
-          <button id="loadFileButton" type="button" title="Load a .txt, .srt, or .vtt file — subtitles are cleaned automatically">📄 File</button>
-          <button id="sampleTextButton" type="button" title="Load a sample transmission to try the loop">Sample Intel</button>
-          <button id="clearButton" type="button">Clear</button>
-          <input id="fileInput" type="file" accept=".txt,.srt,.vtt,.md" hidden />
-        </div>
-        <p id="workStatus" class="work-status" aria-live="polite">Ready.</p>
-      </section>
-
-      <section id="lessonSection" class="panel lesson-panel" aria-labelledby="lessonTitle">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">📋 Mission Brief</p>
-            <h2 id="lessonTitle">Active Lesson</h2>
-          </div>
-          <button id="exportLessonButton" type="button" disabled>Export MD</button>
-        </div>
-
-        <article id="lessonOutput" class="lesson-output empty-state gloss-zone">
-          <h3>No mission brief yet</h3>
-          <p>Paste Spanish text into Source Intake — or hit <strong>Sample Intel</strong> for an instant transmission. HQ will build the full brief: summary, vocabulary, grammar, autopsy targets, and a writing prompt.</p>
-        </article>
-      </section>
-
-      <aside class="side-stack">
+      <!-- ══════════════════ TODAY ══════════════════ -->
+      <div id="page-today" class="page active">
         <section class="panel compact-panel" aria-labelledby="protocolTitle">
           <div class="panel-heading">
             <div>
@@ -248,28 +49,6 @@
             <span id="protocolPhase" class="status-pill muted">Phase</span>
           </div>
           <div id="protocolPanel" class="list-output"></div>
-        </section>
-
-        <section class="panel compact-panel" aria-labelledby="queueTitle">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">🗂 Archive</p>
-              <h2 id="queueTitle">Recent Lessons</h2>
-            </div>
-            <button id="refreshButton" type="button">Refresh</button>
-          </div>
-          <div id="lessonList" class="list-output"></div>
-        </section>
-
-        <section class="panel compact-panel" aria-labelledby="vocabTitle">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">📈 Reinforcement</p>
-              <h2 id="vocabTitle">Vocabulary Watchlist</h2>
-            </div>
-            <button id="exportAnkiButton" type="button" title="Export mastery + mistake bank as an Anki-importable TSV">Anki</button>
-          </div>
-          <div id="vocabList" class="chip-field gloss-zone"></div>
         </section>
 
         <section class="panel compact-panel" aria-labelledby="reviewTitle">
@@ -282,35 +61,269 @@
           </div>
           <div id="reviewQueue" class="list-output"></div>
         </section>
-      </aside>
+      </div>
 
-      <section id="autopsySection" class="panel autopsy-panel" aria-labelledby="autopsyTitle">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">🔬 Codebreaking</p>
-            <h2 id="autopsyTitle">Sentence Autopsy</h2>
-          </div>
-          <button id="runAutopsyButton" type="button">Analyze</button>
-        </div>
-        <textarea id="autopsyInput" spellcheck="false" placeholder="Selecciona o pega una frase..."></textarea>
-        <div id="autopsyOutput" class="structured-output gloss-zone"></div>
-      </section>
+      <!-- ══════════════════ READ ══════════════════ -->
+      <div id="page-read" class="page">
+        <div class="page-col">
+          <section id="intakeSection" class="panel intake-panel" aria-labelledby="intakeTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">📡 Immersion</p>
+                <h2 id="intakeTitle">Source Intake</h2>
+              </div>
+              <select id="sourceType" aria-label="Source type">
+                <option value="pasted_text">Pasted Text</option>
+                <option value="article">Article</option>
+                <option value="subtitle">Subtitle</option>
+                <option value="transcript">Transcript</option>
+                <option value="manual_note">Manual Note</option>
+              </select>
+            </div>
 
-      <section id="writingSection" class="panel writing-panel" aria-labelledby="writingTitle">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">✍️ Correction</p>
-            <h2 id="writingTitle">Writing Practice</h2>
+            <textarea
+              id="sourceText"
+              spellcheck="false"
+              placeholder="Pega texto en espanol aqui..."
+            ></textarea>
+
+            <div class="topic-grid" aria-label="Topic tags">
+              <label><input type="checkbox" name="topic" value="soccer" /> Soccer</label>
+              <label><input type="checkbox" name="topic" value="cybersecurity" /> Cybersecurity</label>
+              <label><input type="checkbox" name="topic" value="investigation" /> Investigation</label>
+              <label><input type="checkbox" name="topic" value="news" /> News</label>
+              <label><input type="checkbox" name="topic" value="tv" /> TV</label>
+              <label><input type="checkbox" name="topic" value="general" /> General</label>
+            </div>
+
+            <input id="extraTags" type="text" placeholder="extra tags, comma separated" />
+
+            <div class="action-row">
+              <button id="generateLessonButton" class="primary-button" type="button">Import + Generate</button>
+              <button id="loadFileButton" type="button" title="Load a .txt, .srt, or .vtt file — subtitles are cleaned automatically">📄 File</button>
+              <button id="sampleTextButton" type="button" title="Load a sample transmission to try the loop">Sample Intel</button>
+              <button id="clearButton" type="button">Clear</button>
+              <input id="fileInput" type="file" accept=".txt,.srt,.vtt,.md" hidden />
+            </div>
+          </section>
+
+          <section class="panel compact-panel" aria-labelledby="queueTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">🗂 Archive</p>
+                <h2 id="queueTitle">Recent Lessons</h2>
+              </div>
+              <button id="refreshButton" type="button">Refresh</button>
+            </div>
+            <div id="lessonList" class="list-output"></div>
+          </section>
+
+          <section class="panel compact-panel" aria-labelledby="vocabTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">📈 Reinforcement</p>
+                <h2 id="vocabTitle">Vocabulary Watchlist</h2>
+              </div>
+              <button id="exportAnkiButton" type="button" title="Export mastery + mistake bank as an Anki-importable TSV">Anki</button>
+            </div>
+            <div id="vocabList" class="chip-field gloss-zone"></div>
+          </section>
+        </div>
+
+        <div class="page-col">
+          <section id="lessonSection" class="panel lesson-panel" aria-labelledby="lessonTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">📋 Mission Brief</p>
+                <h2 id="lessonTitle">Active Lesson</h2>
+              </div>
+              <button id="exportLessonButton" type="button" disabled>Export MD</button>
+            </div>
+
+            <article id="lessonOutput" class="lesson-output empty-state gloss-zone">
+              <h3>No mission brief yet</h3>
+              <p>Paste Spanish text into Source Intake — or hit <strong>Sample Intel</strong> for an instant transmission. HQ will build the full brief: summary, vocabulary, grammar, autopsy targets, and a writing prompt.</p>
+            </article>
+          </section>
+
+          <section id="autopsySection" class="panel autopsy-panel" aria-labelledby="autopsyTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">🔬 Codebreaking</p>
+                <h2 id="autopsyTitle">Sentence Autopsy</h2>
+              </div>
+              <button id="runAutopsyButton" type="button">Analyze</button>
+            </div>
+            <textarea id="autopsyInput" spellcheck="false" placeholder="Selecciona o pega una frase..."></textarea>
+            <div id="autopsyOutput" class="structured-output gloss-zone"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ══════════════════ WRITE ══════════════════ -->
+      <div id="page-write" class="page">
+        <section id="writingSection" class="panel writing-panel" aria-labelledby="writingTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">✍️ Correction</p>
+              <h2 id="writingTitle">Writing Practice</h2>
+            </div>
+            <button id="submitWritingButton" type="button">Submit</button>
           </div>
-          <button id="submitWritingButton" type="button">Submit</button>
-        </div>
-        <div class="writing-prompt-bar">
-          <p id="writingPromptText">Loading today's prompt...</p>
-          <button id="newWritingPromptButton" type="button" title="Different prompt">🎲</button>
-        </div>
-        <textarea id="writingInput" spellcheck="false" placeholder="Escribe tu respuesta en espanol..."></textarea>
-        <div id="writingOutput" class="structured-output gloss-zone"></div>
-      </section>
+          <div class="writing-prompt-bar">
+            <p id="writingPromptText">Loading today's prompt...</p>
+            <button id="newWritingPromptButton" type="button" title="Different prompt">🎲</button>
+          </div>
+          <textarea id="writingInput" spellcheck="false" placeholder="Escribe tu respuesta en espanol..."></textarea>
+          <div id="writingOutput" class="structured-output gloss-zone"></div>
+        </section>
+      </div>
+
+      <!-- ══════════════════ TRAIN ══════════════════ -->
+      <div id="page-train" class="page">
+        <section id="tutorSection" class="panel tutor-panel" aria-labelledby="tutorTitle">
+          <div class="panel-heading tutor-heading">
+            <div>
+              <p class="eyebrow">Signal Tutor</p>
+              <h2 id="tutorTitle">Interactive AI Coach</h2>
+            </div>
+            <div class="tutor-signal">
+              <span>Overall</span>
+              <div id="overallSignalBars" class="signal-bars" aria-label="Overall signal strength"></div>
+              <strong id="overallSignalPercent">0%</strong>
+            </div>
+          </div>
+
+          <div class="tutor-tabs" role="tablist" aria-label="Tutor workspace">
+            <button class="tutor-tab active" type="button" data-tutor-tab="decks">🗂 Decks</button>
+            <button class="tutor-tab" type="button" data-tutor-tab="study">🎴 Study</button>
+            <button class="tutor-tab" type="button" data-tutor-tab="drill">🎯 Drill</button>
+            <button class="tutor-tab" type="button" data-tutor-tab="listen">📻 Listen</button>
+            <button class="tutor-tab" type="button" data-tutor-tab="method">🎧 Method</button>
+            <button class="tutor-tab" type="button" data-tutor-tab="coach">🎙 Coach</button>
+            <button class="tutor-tab" type="button" data-tutor-tab="library">📖 Library</button>
+            <button class="tutor-tab" type="button" data-tutor-tab="status">📊 Status</button>
+          </div>
+
+          <div id="tutorDecksView" class="tutor-view">
+            <div class="tutor-toolbar">
+              <p class="list-empty">Scenario decks from the field kit. Pick a deck, drill weak terms, then ask the coach for grammar and sentence patterns.</p>
+              <button id="resetTutorProgressButton" type="button">Reset Progress</button>
+            </div>
+            <div id="deckGrid" class="deck-grid"></div>
+          </div>
+
+          <div id="tutorStudyView" class="tutor-view" hidden>
+            <div class="study-bar">
+              <button id="backToDecksButton" type="button">Decks</button>
+              <div>
+                <strong id="studyDeckName">Deck</strong>
+                <span id="studyCounter">01 / 01</span>
+              </div>
+              <div id="studySignalBars" class="signal-bars"></div>
+            </div>
+            <button id="flashcard" class="flashcard" type="button">
+              <span id="flashSide" class="face-tag">ES</span>
+              <strong id="flashPrimary">hola</strong>
+              <span id="flashNote">tap to reveal</span>
+              <span id="flashExample"></span>
+            </button>
+            <div class="study-actions">
+              <button id="previousTermButton" type="button">Prev</button>
+              <button id="speakTermButton" type="button">Say It</button>
+              <button id="coachTermButton" type="button">Ask Coach</button>
+              <button id="nextTermButton" type="button">Next</button>
+            </div>
+            <div class="grade-actions">
+              <button id="missedTermButton" type="button">Missed</button>
+              <button id="gotTermButton" class="primary-button" type="button">Got It</button>
+            </div>
+          </div>
+
+          <div id="tutorDrillView" class="tutor-view" hidden>
+            <div class="drill-toolbar">
+              <select id="drillScope" aria-label="Drill scope"></select>
+              <div class="score-line">
+                <span id="drillHits">Hits 0/0</span>
+                <span id="drillStreak">Streak 0</span>
+              </div>
+            </div>
+            <div id="drillCard" class="drill-card"></div>
+          </div>
+
+          <div id="tutorListenView" class="tutor-view" hidden>
+            <div class="drill-toolbar">
+              <select id="listenMode" aria-label="Listening mode">
+                <option value="meaning">Meaning (choose English)</option>
+                <option value="dictation">Dictation (type what you hear)</option>
+              </select>
+              <select id="listenRate" aria-label="Speech speed">
+                <option value="0.7">Slow 0.7x</option>
+                <option value="0.9" selected>Normal 0.9x</option>
+                <option value="1.1">Fast 1.1x</option>
+              </select>
+              <div class="score-line">
+                <span id="listenHits">Hits 0/0</span>
+                <span id="listenStreak">Streak 0</span>
+              </div>
+            </div>
+            <div id="listenCard" class="drill-card">
+              <p class="list-empty">Press Play to receive the transmission.</p>
+            </div>
+          </div>
+
+          <div id="tutorMethodView" class="tutor-view" hidden>
+            <div id="methodPicker" class="method-picker">
+              <button id="startEchoButton" class="method-card" type="button">
+                <strong>🔁 Echo Session</strong>
+                <span>Graduated interval recall, Pimsleur-style. Hear it, anticipate it, say it aloud — recalls return at expanding gaps.</span>
+                <em>~10 min · speaking + memory</em>
+              </button>
+              <button id="startConstructorButton" class="method-card" type="button">
+                <strong>🧱 Constructor Session</strong>
+                <span>Michel Thomas-style building blocks: cognate rules that unlock thousands of words, verb handles, and sentence construction. No memorizing.</span>
+                <em>~10 min · construction + grammar</em>
+              </button>
+            </div>
+            <div id="methodPlayer" class="method-player" hidden></div>
+          </div>
+
+          <div id="tutorCoachView" class="tutor-view" hidden>
+            <div id="coachMessages" class="coach-messages gloss-zone" aria-live="polite"></div>
+            <div id="coachSuggestions" class="coach-suggestions" aria-label="Suggested follow-ups"></div>
+            <div class="coach-quick-actions">
+              <button type="button" data-coach-action="explain">Explain</button>
+              <button type="button" data-coach-action="quiz">Quiz</button>
+              <button type="button" data-coach-action="autopsy">Autopsy</button>
+              <button type="button" data-coach-action="writing">Writing</button>
+              <button type="button" data-coach-action="conjugate">Conjugate</button>
+              <button type="button" data-coach-action="plan">Plan</button>
+              <button id="clearCoachButton" type="button" title="Clear chat history">Clear</button>
+            </div>
+            <div class="coach-input-row">
+              <textarea id="coachInput" spellcheck="false" placeholder="Ask anything: 'conjugate tener', 'ser vs estar', 'quiz me', 'correct: <tu texto>'... Enter to send."></textarea>
+              <button id="sendCoachButton" class="primary-button" type="button">Send</button>
+            </div>
+          </div>
+
+          <div id="tutorLibraryView" class="tutor-view" hidden>
+            <div class="library-toolbar">
+              <input id="librarySearch" type="text" spellcheck="false" placeholder="Search Spanish or English... (e.g. amenaza, threat)" />
+              <select id="libraryCategory" aria-label="Category filter">
+                <option value="all">All Categories</option>
+              </select>
+            </div>
+            <p id="libraryCount" class="list-empty">Loading the library...</p>
+            <div id="libraryList" class="library-list gloss-zone"></div>
+          </div>
+
+          <div id="tutorStatusView" class="tutor-view" hidden>
+            <div id="intelReport" class="status-grid"></div>
+            <div id="tutorStatusGrid" class="status-grid"></div>
+            <div id="signalDistribution" class="signal-distribution"></div>
+          </div>
+        </section>
+      </div>
     </main>
 
     <div id="hoverGloss" class="hover-gloss" hidden aria-hidden="true"></div>

@@ -50,6 +50,11 @@ def test_dashboard_assets_are_served(tmp_path, monkeypatch):
     assert "writingPromptText" in dashboard.text
     assert "exportAnkiButton" in dashboard.text
     assert "/exports/anki" in js.text
+    # Page-based navigation.
+    for page in ("page-today", "page-read", "page-write", "page-train"):
+        assert page in dashboard.text
+    assert 'data-page="today"' in dashboard.text
+    assert "showPage" in js.text
     clear_engine_cache()
 
 

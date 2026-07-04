@@ -184,6 +184,29 @@ textarea {
   transform: translateY(-1px);
 }
 
+.hq-nav a.active {
+  border-color: var(--border-hot);
+  background: rgba(201, 162, 39, 0.12);
+  color: #ffe9b0;
+}
+
+.topbar .work-status {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  color: var(--quiet);
+  font-size: 13px;
+}
+
+a.status-pill {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.status-pill:hover {
+  border-color: var(--border-hot);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -251,15 +274,43 @@ section[id] {
 }
 
 .shell {
-  display: grid;
-  grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 1.35fr) minmax(280px, 0.8fr);
-  grid-template-areas:
-    "tutor tutor tutor"
-    "intake lesson side"
-    "autopsy lesson side"
-    "writing lesson side";
-  gap: 14px;
   padding: 0 clamp(16px, 3vw, 36px) 32px;
+}
+
+.page {
+  display: none;
+}
+
+.page.active {
+  display: grid;
+  gap: 14px;
+  animation: panel-in 280ms ease both;
+}
+
+#page-today.active {
+  grid-template-columns: minmax(300px, 1fr) minmax(300px, 1.15fr);
+  align-items: start;
+}
+
+#page-read.active {
+  grid-template-columns: minmax(300px, 0.9fr) minmax(360px, 1.5fr);
+  align-items: start;
+}
+
+.page-col {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+
+#page-write.active {
+  grid-template-columns: minmax(0, 880px);
+  justify-content: center;
+}
+
+#page-train.active {
+  grid-template-columns: 1fr;
 }
 
 .panel {
@@ -278,10 +329,6 @@ section[id] {
   min-height: 68px;
   padding: 14px;
   border-bottom: 1px solid var(--border);
-}
-
-.tutor-panel {
-  grid-area: tutor;
 }
 
 .tutor-heading {
@@ -873,12 +920,29 @@ section[id] {
 
 .mission {
   display: flex;
+  align-items: center;
   gap: 10px;
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #10120f;
   line-height: 1.4;
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+
+.mission:hover {
+  border-color: var(--border-hot);
+}
+
+.mission > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.mission-go {
+  color: var(--quiet);
+  font-size: 14px;
 }
 
 .mission.done {
@@ -1387,29 +1451,6 @@ section[id] {
   background: var(--green);
 }
 
-.intake-panel {
-  grid-area: intake;
-}
-
-.lesson-panel {
-  grid-area: lesson;
-}
-
-.side-stack {
-  grid-area: side;
-  display: grid;
-  gap: 14px;
-  align-content: start;
-}
-
-.autopsy-panel {
-  grid-area: autopsy;
-}
-
-.writing-panel {
-  grid-area: writing;
-}
-
 .intake-panel textarea,
 .autopsy-panel textarea,
 .writing-panel textarea {
@@ -1592,15 +1633,6 @@ section[id] {
 }
 
 @media (max-width: 1180px) {
-  .shell {
-    grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
-    grid-template-areas:
-      "tutor tutor"
-      "intake lesson"
-      "autopsy lesson"
-      "writing side";
-  }
-
   .deck-grid,
   .status-grid {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -1613,15 +1645,9 @@ section[id] {
     flex-direction: column;
   }
 
-  .shell {
+  #page-today.active,
+  #page-read.active {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "tutor"
-      "intake"
-      "lesson"
-      "autopsy"
-      "writing"
-      "side";
   }
 
   .panel-heading {

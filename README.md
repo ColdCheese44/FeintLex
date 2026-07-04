@@ -8,6 +8,8 @@ Core loop:
 Immersion -> Sentence Autopsy -> Practice -> Correction -> Reinforcement
 ```
 
+**Navigation:** the dashboard is organized into four pages — **🏠 Today** (daily missions + review queue), **📖 Read** (intake → lesson → autopsy, with archive and vocabulary), **✍️ Write** (prompted writing practice), and **🎴 Train** (the full Signal Tutor with its eight tabs). Switch with the header pills or `#today/#read/#write/#train` hashes; mission rows on Today jump straight to the right page.
+
 **HQ experience:** the dashboard is a command center — tactical rank ladder (Recruit → Spymaster) with XP earned from every lesson, autopsy, writing run, and locked signal (`GET /progress/hq`), a 🔥 daily streak, section navigation pills, toast feedback on every action, mission-complete celebrations, and a **Sample Intel** button for an instant start.
 
 **Training program:** see [PROGRAM.md](PROGRAM.md) — a research-backed, reading/writing-first Spanish protocol (Nation's four strands, frequency-first vocabulary, extensive reading, direct written corrective feedback, spaced retrieval). The dashboard's **Daily Missions** panel tracks the protocol live via `GET /program/today`, and the Core Signal decks (07-10) carry the top-frequency vocabulary the program prescribes.

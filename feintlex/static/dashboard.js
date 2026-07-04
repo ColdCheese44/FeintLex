@@ -467,6 +467,26 @@ async function refreshReviewQueue() {
   renderReviewQueue();
 }
 
+// --- Page router ---------------------------------------------------------------
+
+const HQ_PAGES = ["today", "read", "write", "train"];
+const MISSION_PAGES = { queue: "today", read: "read", autopsy: "read", write: "write", drill: "train", listen: "train" };
+
+function showPage(name) {
+  const page = HQ_PAGES.includes(name) ? name : "today";
+  document.querySelectorAll(".page").forEach((node) => {
+    node.classList.toggle("active", node.id === `page-${page}`);
+  });
+  document.querySelectorAll(".hq-nav a").forEach((link) => {
+    link.classList.toggle("active", link.dataset.page === page);
+  });
+  window.scrollTo({ top: 0 });
+}
+
+function currentPage() {
+  return location.hash.replace("#", "") || "today";
+}
+
 function renderProtocol(program) {
   const previous = state.program;
   state.program = program;
@@ -503,12 +523,13 @@ function renderProtocol(program) {
       ${program.missions
         .map(
           (mission) => `
-            <li class="mission ${mission.done ? "done" : ""}">
+            <li class="mission ${mission.done ? "done" : ""}" data-goto="${escapeHtml(MISSION_PAGES[mission.id] || "today")}" title="Go to the ${escapeHtml(MISSION_PAGES[mission.id] || "today")} page">
               <span class="mission-check">${mission.done ? "✓" : mission.manual ? "·" : "○"}</span>
               <div>
                 <strong>${escapeHtml(mission.title)}</strong>
                 <span class="mission-detail">${escapeHtml(mission.detail)} — ${escapeHtml(mission.minutes)} min</span>
               </div>
+              <span class="mission-go">→</span>
             </li>
           `,
         )
@@ -2382,6 +2403,11 @@ function bindEvents() {
   });
   $("newWritingPromptButton").addEventListener("click", () => renderWritingPrompt(true));
   $("exportAnkiButton").addEventListener("click", exportAnki);
+  window.addEventListener("hashchange", () => showPage(currentPage()));
+  $("protocolPanel").addEventListener("click", (event) => {
+    const mission = event.target.closest(".mission[data-goto]");
+    if (mission) location.hash = mission.dataset.goto;
+  });
   $("exportLessonButton").addEventListener("click", exportLesson);
   bindTutorEvents();
 }
@@ -2391,4 +2417,5 @@ initializeTutor();
 loadLexicon();
 loadHq();
 renderWritingPrompt();
+showPage(currentPage());
 refreshDashboard().catch((error) => setStatus(error.message, true));
